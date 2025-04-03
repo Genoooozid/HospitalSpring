@@ -1,0 +1,32 @@
+USE usuarios;
+SELECT * FROM usuarios;
+SELECT * FROM roles;
+SELECT * FROM bitacora;
+SELECT * FROM pisos;
+SELECT * FROM camas;
+SELECT * FROM user_has_beds;
+SELECT * FROM paciente;
+
+CREATE DATABASE usuarios;
+DROP DATABASE usuarios;
+
+DROP TABLE user_has_beds;
+DROP TABLE bitacora;
+DROP TABLE enfermera_camas;
+DROP TABLE camas;
+DROP TABLE usuarios;
+DROP TABLE roles;
+DROP TABLE pisos;
+DROP TABLE paciente;
+
+INSERT INTO roles (id, rol) VALUES
+(1, 'admin'),
+(2, 'secretaria'),
+(3, 'enfermera');
+
+INSERT INTO pisos (id_piso, nombre) VALUES (1, 'P1');
+
+INSERT INTO camas (id_cama, nombre, id_piso) VALUES (1, 'CAMA-01', 1);
+
+INSERT INTO usuarios (estatus, rol_foranea, telefono, correo, materno, nombre, paterno, username, password, piso_asignado_foranea)
+VALUES (1, 1, '1234567890', 'correo@dominio.com', 'Adán', 'Luis Ángel', 'Meza', 'adan', '$2a$10$3CIpBUtMFyJh7eZcF6on.ubetWJK529cFM/x1HrW.oD8d08xVBAVe', null);
