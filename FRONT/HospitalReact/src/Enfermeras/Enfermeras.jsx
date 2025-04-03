@@ -1,0 +1,1 @@
+//Esta es la pagina que renderiza los botones, tabla, buscador y paginación
