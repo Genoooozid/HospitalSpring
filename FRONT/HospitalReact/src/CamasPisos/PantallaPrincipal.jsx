@@ -1,11 +1,13 @@
 import React from 'react';
+import Layout from '../components/Layout';
 
 const PantallaPrincipal = () => {
   return (
-    <div>
-      <h1>Bienvenido a la Pantalla Principal</h1>
-      <p>Este es un componente básico de React con un div.</p>
-    </div>
+    <Layout>
+      <div className="text-center mt-4">
+        <h1>Gestionar Camas y Pisos</h1>
+      </div>
+    </Layout>
   );
 };
 
