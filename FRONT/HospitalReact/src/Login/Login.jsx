@@ -1,22 +1,57 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
+import Swal from 'sweetalert2'; 
+import 'react-toastify/dist/ReactToastify.css';
 
 function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
 
         if (username === '' || password === '') {
             setError('Por favor, completa todos los campos.');
-        } else {
-            console.log('Usuario:', username);
-            console.log('Contraseña:', password);
+            setIsLoading(false);
+            return;
+        }
 
-            setUsername('');
-            setPassword('');
-            setError('');
+        try {
+            const response = await axios.post('http://localhost:8080/api/auth/signin', {
+                username,
+                password,
+            });
+
+            if (response.data.status === 'OK') {
+                await Swal.fire({
+                    title: '¡Éxito!',
+                    text: 'Inicio de sesión exitoso',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    timerProgressBar: true
+                });
+
+                localStorage.setItem('token', response.data.data.token || response.data.data);
+                localStorage.setItem('username', username);
+                sessionStorage.setItem('token', response.data.data.token || response.data.data);
+                sessionStorage.setItem('username', username);
+                navigate('/camaspisos');
+            }
+        } catch (error) {
+            setError('Usuario o contraseña incorrectos.');
+            toast.error('Error al iniciar sesión. Verifica tus datos.', {
+                position: "top-right",
+                autoClose: 3000
+            });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -25,6 +60,7 @@ function Login() {
             <div className="row justify-content-center">
                 <div className="col-md-4">
                     <h2 className="text-center">Iniciar sesión</h2>
+                    <ToastContainer />
 
                     {error && <div className="alert alert-danger">{error}</div>}
 
@@ -53,7 +89,13 @@ function Login() {
                             />
                         </div>
 
-                        <button type="submit" className="btn btn-primary w-100">Iniciar sesión</button>
+                        <button 
+                            type="submit" 
+                            className="btn btn-primary w-100"
+                            disabled={isLoading}
+                        >
+                            {isLoading ? 'Cargando...' : 'Iniciar sesión'}
+                        </button>
                     </form>
                 </div>
             </div>
