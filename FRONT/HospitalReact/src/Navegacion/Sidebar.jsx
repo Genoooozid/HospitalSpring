@@ -1,16 +1,18 @@
 import React from 'react';
 import Swal from 'sweetalert2';
-import Logo from '../assets/logo.png'
-import { useNavigate } from 'react-router-dom';
+import Logo from '../assets/logo.png';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Sidebar = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const username = sessionStorage.getItem('username');
-    const userRole = "Administrador"; 
+    const userRole = sessionStorage.getItem('role') || "Administrador";
 
     const handleLogout = async () => {
         sessionStorage.removeItem("token");
         sessionStorage.removeItem("username");
+        sessionStorage.removeItem("role");
         localStorage.removeItem("token");
         localStorage.removeItem("username");
 
@@ -32,6 +34,11 @@ const Sidebar = () => {
         { name: "Secretarias", icon: "📋", path: "/secretarias" },
     ];
 
+    // Función para verificar si un item está activo
+    const isActive = (path) => {
+        return location.pathname === path;
+    };
+
     return (
         <div style={{
             width: '280px',
@@ -47,6 +54,7 @@ const Sidebar = () => {
             top: 0,
             zIndex: 1000
         }}>
+            {/* Logo y título */}
             <div style={{
                 textAlign: 'center',
                 padding: '20px 0',
@@ -71,6 +79,7 @@ const Sidebar = () => {
                 }}>v1.0.0</p>
             </div>
 
+            {/* Información del usuario */}
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -94,6 +103,7 @@ const Sidebar = () => {
                 </div>
             </div>
 
+            {/* Menú de navegación */}
             <nav style={{ flex: 1, padding: '0 15px' }}>
                 <ul style={{
                     listStyle: 'none',
@@ -107,9 +117,8 @@ const Sidebar = () => {
                                 marginBottom: '5px',
                                 borderRadius: '6px',
                                 transition: 'all 0.3s ease',
-                                ':hover': {
-                                    backgroundColor: '#3498db'
-                                }
+                                backgroundColor: isActive(item.path) ? '#3498db' : 'transparent',
+                                borderLeft: isActive(item.path) ? '4px solid #fff' : '4px solid transparent'
                             }}
                             onClick={() => navigate(item.path)}
                         >
@@ -122,7 +131,7 @@ const Sidebar = () => {
                                 textDecoration: 'none',
                                 borderRadius: '6px',
                                 ':hover': {
-                                    backgroundColor: '#3498db'
+                                    backgroundColor: isActive(item.path) ? '#3498db' : 'rgba(255,255,255,0.1)'
                                 }
                             }}>
                                 <span style={{
@@ -131,13 +140,17 @@ const Sidebar = () => {
                                     width: '25px',
                                     textAlign: 'center'
                                 }}>{item.icon}</span>
-                                <span style={{ fontSize: '0.95rem' }}>{item.name}</span>
+                                <span style={{
+                                    fontSize: '0.95rem',
+                                    fontWeight: isActive(item.path) ? '600' : '400'
+                                }}>{item.name}</span>
                             </div>
                         </li>
                     ))}
                 </ul>
             </nav>
 
+            {/* Botón de cerrar sesión */}
             <div style={{
                 padding: '15px 25px',
                 borderTop: '1px solid rgba(255,255,255,0.1)'

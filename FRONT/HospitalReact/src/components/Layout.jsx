@@ -5,10 +5,10 @@ const Layout = ({ children }) => {
     return (
         <div className="container-fluid">
             <div className="row">
-                <div className="col-md-3 p-0">
+                <div className="col-md-2 p-0">
                     <Sidebar />
                 </div>
-                <div className="col-md-9 p-4">
+                <div className="col-md-10 p-5">
                     {children}
                 </div>
             </div>
