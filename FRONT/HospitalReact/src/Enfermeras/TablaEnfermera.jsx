@@ -8,7 +8,6 @@ import {
 } from '@tanstack/react-table';
 import EliminarEnfermera from './EliminarEnfermera';
 import ModificarEnfermera from './ModificarEnfermera';
-import { FiEdit } from 'react-icons/fi';
 
 const TablaEnfermeras = ({ refresh }) => {
     const [enfermeras, setEnfermeras] = useState([]);
@@ -86,9 +85,16 @@ const TablaEnfermeras = ({ refresh }) => {
                         onClick={() => handleModificar(row.original)}
                         title="Modificar enfermera"
                     >
-                        <FiEdit /> Modificar
+                        Modificar
                     </button>
                     <EliminarEnfermera id={row.original.id} estatus={row.original.estatus} onSuccess={fetchEnfermeras} />
+                    <button
+                        className="btn btn-sm btn-primary d-flex align-items-center gap-1"
+                        onClick={() => handleModificar(row.original)}
+                        title="Reasignar"
+                    >
+                        Reasignar
+                    </button>
                 </div>
             ),
         }),
