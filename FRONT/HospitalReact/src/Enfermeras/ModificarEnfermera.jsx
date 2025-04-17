@@ -19,7 +19,7 @@ const ModificarEnfermera = ({ show, onClose, enfermera, triggerRefresh }) => {
     useEffect(() => {
         if (enfermera) {
             setFormData({
-                
+
                 nombre: enfermera.nombre || '',
                 paterno: enfermera.paterno || '',
                 materno: enfermera.materno || '',
@@ -66,7 +66,8 @@ const ModificarEnfermera = ({ show, onClose, enfermera, triggerRefresh }) => {
 
             Swal.fire({
                 icon: 'success',
-                title: '¡Actualizado!'
+                title: '¡Actualizado!',
+                text: 'Enfemera actualizada correctamente'
             });
 
             resetForm();
@@ -75,11 +76,12 @@ const ModificarEnfermera = ({ show, onClose, enfermera, triggerRefresh }) => {
                 triggerRefresh();
             }, 3000);
         } catch (error) {
-            console.error('Error al actualizar:', error);
+            const message = error.response?.data?.mensaje || error.response?.data?.message || 'Ocurrió un error al actualizar la enfermera';
+
             Swal.fire({
                 icon: 'error',
-                title: 'Error',
-                text: error.response?.data?.message || 'Ocurrió un error al actualizar la enfermera',
+                title: 'No se pudo actualizar',
+                text: message,
             });
         } finally {
             setLoading(false);

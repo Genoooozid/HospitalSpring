@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+import DelegarCamasModal from './DelegarCamas';
 
-const EliminarEnfermera = ({ id, estatus, onSuccess }) => {
+const EliminarEnfermera = ({ enfermera, onSuccess }) => {
+    const { id, estatus, nombre, paterno, materno } = enfermera;
     const token = sessionStorage.getItem('token');
+
+    const [showDelegarCamasModal, setShowDelegarCamasModal] = useState(false);
+    const [reintentarEliminacion, setReintentarEliminacion] = useState(false);
 
     const handleEliminar = async () => {
         Swal.fire({
             title: '¿Estás seguro?',
-            text: 'La enfermera será desactivada.',
+            text: `La enfermera ${nombre} ${paterno} ${materno} será desactivada.`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
@@ -23,16 +28,17 @@ const EliminarEnfermera = ({ id, estatus, onSuccess }) => {
                             'Authorization': `Bearer ${token}`
                         }
                     });
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Eliminado',
-                        text: 'La enfermera ha sido desactivada correctamente',
+                        text: `La enfermera ${nombre} ${paterno} ${materno} ha sido desactivada correctamente.`,
                         timer: 2000,
                         showConfirmButton: false
                     });
+
                     onSuccess();
                 } catch (error) {
-                    console.error('Error al eliminar enfermera:', error);
                     const status = error.response?.status;
                     const message = error.response?.data?.message;
 
@@ -41,6 +47,14 @@ const EliminarEnfermera = ({ id, estatus, onSuccess }) => {
                             icon: 'error',
                             title: 'No se puede eliminar',
                             text: 'La enfermera tiene camas asignadas y no puede ser eliminada.',
+                            showCancelButton: true,
+                            cancelButtonText: 'Cancelar',
+                            confirmButtonText: 'Delegar camas',
+                        }).then(result => {
+                            if (result.isConfirmed) {
+                                setShowDelegarCamasModal(true);
+                                setReintentarEliminacion(true);
+                            }
                         });
                     } else {
                         Swal.fire({
@@ -54,11 +68,20 @@ const EliminarEnfermera = ({ id, estatus, onSuccess }) => {
         });
     };
 
+    const handleDelegacionExitosa = async () => {
+        setShowDelegarCamasModal(false);
+        if (reintentarEliminacion) {
+            setReintentarEliminacion(false);
+            setTimeout(() => {
+                handleEliminar();
+            }, 400);
+        }
+    };
 
     const handleReactivar = async () => {
         Swal.fire({
             title: '¿Reactivar enfermera?',
-            text: 'La enfermera volverá a estar activa.',
+            text: `La enfermera ${nombre} ${paterno} ${materno} volverá a estar activa.`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#28a745',
@@ -73,16 +96,17 @@ const EliminarEnfermera = ({ id, estatus, onSuccess }) => {
                             'Authorization': `Bearer ${token}`
                         }
                     });
+
                     Swal.fire({
                         icon: 'success',
                         title: 'Reactivada',
-                        text: 'La enfermera ha sido reactivada correctamente',
+                        text: `La enfermera ${nombre} ${paterno} ${materno} ha sido reactivada correctamente.`,
                         timer: 2000,
                         showConfirmButton: false
                     });
+
                     onSuccess();
                 } catch (error) {
-                    console.error('Error al reactivar enfermera:', error);
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
@@ -93,14 +117,27 @@ const EliminarEnfermera = ({ id, estatus, onSuccess }) => {
         });
     };
 
-    return estatus ? (
-        <button className="btn btn-sm btn-danger" onClick={handleEliminar}>
-            Desactivar
-        </button>
-    ) : (
-        <button className="btn btn-sm btn-success" onClick={handleReactivar}>
-            Reactivar
-        </button>
+    return (
+        <>
+            {estatus ? (
+                <button className="btn btn-sm btn-danger" onClick={handleEliminar}>
+                    Desactivar
+                </button>
+            ) : (
+                <button className="btn btn-sm btn-success" onClick={handleReactivar}>
+                    Reactivar
+                </button>
+            )}
+
+            {showDelegarCamasModal && (
+                <DelegarCamasModal
+                    enfermeraActual={enfermera}
+                    visible={showDelegarCamasModal}
+                    onClose={() => setShowDelegarCamasModal(false)}
+                    onDelegadoExitosamente={handleDelegacionExitosa}
+                />
+            )}
+        </>
     );
 };
 

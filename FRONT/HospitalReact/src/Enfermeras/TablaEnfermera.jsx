@@ -74,6 +74,9 @@ const TablaEnfermeras = ({ refresh }) => {
         columnHelper.accessor('username', {
             header: 'Usuario',
         }),
+        columnHelper.accessor('piso.idPiso', {
+            header: 'Piso',
+        }),
         columnHelper.accessor('estatus', {
             header: 'Activo',
             cell: info => (info.getValue() ? 'Sí' : 'No'),
@@ -93,7 +96,7 @@ const TablaEnfermeras = ({ refresh }) => {
                     >
                         Modificar
                     </button>
-                    <EliminarEnfermera id={row.original.id} estatus={row.original.estatus} onSuccess={fetchEnfermeras} />
+                    <EliminarEnfermera enfermera={row.original} onSuccess={fetchEnfermeras} />
                     <button
                         className="btn btn-sm btn-primary d-flex align-items-center gap-1"
                         onClick={() => handleReasignar(row.original)}
