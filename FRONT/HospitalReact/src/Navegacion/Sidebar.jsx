@@ -7,12 +7,12 @@ const Sidebar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const username = sessionStorage.getItem('username');
-    const userRole = sessionStorage.getItem('role') || "Administrador";
+    const userRole = sessionStorage.getItem('rol') || "Administrador";
 
     const handleLogout = async () => {
         sessionStorage.removeItem("token");
         sessionStorage.removeItem("username");
-        sessionStorage.removeItem("role");
+        sessionStorage.removeItem("rol");
         localStorage.removeItem("token");
         localStorage.removeItem("username");
 

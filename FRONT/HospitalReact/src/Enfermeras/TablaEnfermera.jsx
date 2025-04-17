@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-table';
 import EliminarEnfermera from './EliminarEnfermera';
 import ModificarEnfermera from './ModificarEnfermera';
+import ReasignarEnfermera from './ReasignarEnfermera'
 
 const TablaEnfermeras = ({ refresh }) => {
     const [enfermeras, setEnfermeras] = useState([]);
@@ -15,6 +16,7 @@ const TablaEnfermeras = ({ refresh }) => {
     const [selectedEnfermera, setSelectedEnfermera] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [refrescar, setRefrescar] = useState(false);
+    const [showReasignarModal, setShowReasignarModal] = useState(false);
 
     const triggerRefresh = () => setRefrescar(prev => !prev);
 
@@ -49,6 +51,11 @@ const TablaEnfermeras = ({ refresh }) => {
         if (updated) fetchEnfermeras();
     };
 
+    const handleReasignar = (enfermera) => {
+        setSelectedEnfermera(enfermera);
+        setShowReasignarModal(true);
+    };
+
     const columnHelper = createColumnHelper();
 
     const columns = useMemo(() => [
@@ -56,14 +63,13 @@ const TablaEnfermeras = ({ refresh }) => {
             header: 'ID',
             cell: info => info.getValue(),
         }),
-        columnHelper.accessor('nombre', {
-            header: 'Nombre',
-        }),
-        columnHelper.accessor('paterno', {
-            header: 'Apellido Paterno',
-        }),
-        columnHelper.accessor('materno', {
-            header: 'Apellido Materno',
+        columnHelper.display({
+            id: 'nombreCompleto',
+            header: 'Nombre Completo',
+            cell: ({ row }) => {
+                const { nombre, paterno, materno } = row.original;
+                return `${nombre} ${paterno} ${materno}`;
+            },
         }),
         columnHelper.accessor('username', {
             header: 'Usuario',
@@ -90,7 +96,7 @@ const TablaEnfermeras = ({ refresh }) => {
                     <EliminarEnfermera id={row.original.id} estatus={row.original.estatus} onSuccess={fetchEnfermeras} />
                     <button
                         className="btn btn-sm btn-primary d-flex align-items-center gap-1"
-                        onClick={() => handleModificar(row.original)}
+                        onClick={() => handleReasignar(row.original)}
                         title="Reasignar"
                     >
                         Reasignar
@@ -99,6 +105,7 @@ const TablaEnfermeras = ({ refresh }) => {
             ),
         }),
     ], []);
+
 
     const table = useReactTable({
         data: enfermeras,
@@ -144,6 +151,16 @@ const TablaEnfermeras = ({ refresh }) => {
 
                 />
             )}
+
+            {showReasignarModal && selectedEnfermera && (
+                <ReasignarEnfermera
+                    show={showReasignarModal}
+                    onClose={() => setShowReasignarModal(false)}
+                    enfermera={selectedEnfermera}
+                    onSuccess={fetchEnfermeras}
+                />
+            )}
+
         </div>
     );
 };

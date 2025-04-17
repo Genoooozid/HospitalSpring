@@ -8,7 +8,7 @@ const EliminarEnfermera = ({ id, estatus, onSuccess }) => {
     const handleEliminar = async () => {
         Swal.fire({
             title: '¿Estás seguro?',
-            text: 'La enfermera será desactivada (eliminación lógica).',
+            text: 'La enfermera será desactivada.',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
@@ -18,7 +18,7 @@ const EliminarEnfermera = ({ id, estatus, onSuccess }) => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    await axios.delete(`http://localhost:8080/api/usuarios/persona/${id}`, {
+                    await axios.delete(`http://localhost:8080/api/usuarios/persona/eliminar/enfermera/${id}`, {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
@@ -33,15 +33,27 @@ const EliminarEnfermera = ({ id, estatus, onSuccess }) => {
                     onSuccess();
                 } catch (error) {
                     console.error('Error al eliminar enfermera:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: error.response?.data?.message || 'Ocurrió un error al intentar eliminar a la enfermera.',
-                    });
+                    const status = error.response?.status;
+                    const message = error.response?.data?.message;
+
+                    if (status === 409) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'No se puede eliminar',
+                            text: 'La enfermera tiene camas asignadas y no puede ser eliminada.',
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message || 'Ocurrió un error al intentar eliminar a la enfermera.',
+                        });
+                    }
                 }
             }
         });
     };
+
 
     const handleReactivar = async () => {
         Swal.fire({

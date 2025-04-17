@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
-import Swal from 'sweetalert2'; 
+import Swal from 'sweetalert2';
 import 'react-toastify/dist/ReactToastify.css';
 
 function Login() {
@@ -38,10 +38,18 @@ function Login() {
                     timerProgressBar: true
                 });
 
-                localStorage.setItem('token', response.data.data.token || response.data.data);
+                // Extraer los valores de la respuesta
+                const { token, rol, id } = response.data.data;
+
+                localStorage.setItem('token', token);
                 localStorage.setItem('username', username);
-                sessionStorage.setItem('token', response.data.data.token || response.data.data);
+                localStorage.setItem('rol', rol);
+                localStorage.setItem('id', id);
+
+                sessionStorage.setItem('token', token);
                 sessionStorage.setItem('username', username);
+                sessionStorage.setItem('rol', rol);
+                sessionStorage.setIte
                 navigate('/camaspisos');
             }
         } catch (error) {
@@ -89,8 +97,8 @@ function Login() {
                             />
                         </div>
 
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className="btn btn-primary w-100"
                             disabled={isLoading}
                         >
