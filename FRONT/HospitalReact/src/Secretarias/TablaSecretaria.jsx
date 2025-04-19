@@ -6,83 +6,63 @@ import {
     flexRender,
     createColumnHelper,
 } from '@tanstack/react-table';
-import EliminarEnfermera from './EliminarEnfermera';
-import ModificarEnfermera from './ModificarEnfermera';
-import ReasignarEnfermera from './ReasignarEnfermera';
+import ModificarSecretaria from './ModificarSecretaria';
+import EliminarSecretaria from './EliminarSecretaria';
+import ReasignarSecretaria from './ReasignarSecretaria'; 
 
-const TablaEnfermeras = ({ refresh, filtroNombre }) => {
-    const [enfermeras, setEnfermeras] = useState([]);
+const TablaSecretarias = ({ refresh, filtroNombre }) => {
+    const [secretarias, setSecretarias] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedEnfermera, setSelectedEnfermera] = useState(null);
+    const [selectedSecretaria, setSelectedSecretaria] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [refrescar, setRefrescar] = useState(false);
-    const [showReasignarModal, setShowReasignarModal] = useState(false);
+    const [showReasignarModal, setShowReasignarModal] = useState(false); 
 
     const triggerRefresh = () => setRefrescar(prev => !prev);
 
-    const fetchEnfermeras = async () => {
+    const fetchSecretarias = async () => {
         try {
             const token = sessionStorage.getItem('token');
-            const rol = sessionStorage.getItem('rol');
-            const idUsuario = sessionStorage.getItem('id');
-    
-            let url = 'http://localhost:8080/api/usuarios/persona/enfermeras';
-    
-            if (rol === 'secretaria') {
-                const secretariaResponse = await axios.get(`http://localhost:8080/api/usuarios/persona/secretarias/${idUsuario}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-    
-                const pisoId = secretariaResponse.data.piso?.idPiso;
-                if (pisoId) {
-                    url = `http://localhost:8080/api/usuarios/persona/enfermeras/piso/${pisoId}`;
-                }
-            }
-    
-            const response = await axios.get(url, {
+            const response = await axios.get('http://localhost:8080/api/usuarios/persona/secretarias', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
             });
-    
-            setEnfermeras(response.data);
+            setSecretarias(response.data);
         } catch (error) {
-            console.error('Error al obtener enfermeras:', error);
+            console.error('Error al obtener secretarias:', error);
         } finally {
             setLoading(false);
         }
     };
-    
 
     useEffect(() => {
-        fetchEnfermeras();
+        fetchSecretarias();
     }, [refresh]);
 
-    const handleModificar = (enfermera) => {
-        setSelectedEnfermera(enfermera);
+    const handleModificar = (secretaria) => {
+        setSelectedSecretaria(secretaria);
         setShowModal(true);
+    };
+
+    const handleReasignar = (secretaria) => {
+        setSelectedSecretaria(secretaria);
+        setShowReasignarModal(true);
     };
 
     const handleCloseModal = (updated) => {
         setShowModal(false);
-        setSelectedEnfermera(null);
-        if (updated) fetchEnfermeras();
+        setSelectedSecretaria(null);
+        if (updated) fetchSecretarias();
     };
 
-    const handleReasignar = (enfermera) => {
-        setSelectedEnfermera(enfermera);
-        setShowReasignarModal(true);
-    };
-
-    const enfermerasFiltradas = useMemo(() => {
-        if (!filtroNombre.trim()) return enfermeras;
-        return enfermeras.filter(e => {
-            const nombreCompleto = `${e.nombre} ${e.paterno} ${e.materno}`.toLowerCase();
+    const secretariasFiltradas = useMemo(() => {
+        if (!filtroNombre.trim()) return secretarias;
+        return secretarias.filter(s => {
+            const nombreCompleto = `${s.nombre} ${s.paterno} ${s.materno}`.toLowerCase();
             return nombreCompleto.includes(filtroNombre.toLowerCase());
         });
-    }, [enfermeras, filtroNombre]);
+    }, [secretarias, filtroNombre]);
 
     const columnHelper = createColumnHelper();
 
@@ -116,32 +96,30 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
             id: 'acciones',
             header: 'Acciones',
             cell: ({ row }) => {
-                const enfermera = row.original;
-                const desactivada = !enfermera.estatus;
+                const secretaria = row.original;
+                const desactivada = !secretaria.estatus;
 
                 return (
                     <div className="d-flex gap-2">
                         <button
-                            className="btn btn-sm btn-primary d-flex align-items-center gap-1"
-                            onClick={() => handleReasignar(enfermera)}
-                            title="Reasignar"
+                            className="btn btn-sm btn-primary"
+                            onClick={() => handleReasignar(secretaria)}
                             disabled={desactivada}
                         >
                             Reasignar
                         </button>
 
                         <button
-                            className="btn btn-sm btn-warning d-flex align-items-center gap-1"
-                            onClick={() => handleModificar(enfermera)}
-                            title="Modificar enfermera"
+                            className="btn btn-sm btn-warning"
+                            onClick={() => handleModificar(secretaria)}
                             disabled={desactivada}
                         >
                             Modificar
                         </button>
 
-                        <EliminarEnfermera
-                            enfermera={enfermera}
-                            onSuccess={fetchEnfermeras}
+                        <EliminarSecretaria
+                            secretaria={secretaria}
+                            onSuccess={fetchSecretarias}
                             disabled={desactivada}
                         />
                     </div>
@@ -151,12 +129,12 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
     ], []);
 
     const table = useReactTable({
-        data: enfermerasFiltradas,
+        data: secretariasFiltradas,
         columns,
         getCoreRowModel: getCoreRowModel(),
     });
 
-    if (loading) return <p>Cargando enfermeras...</p>;
+    if (loading) return <p>Cargando secretarias...</p>;
 
     return (
         <div className="mt-4 table-responsive">
@@ -185,25 +163,28 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
                 </tbody>
             </table>
 
-            {showModal && selectedEnfermera && (
-                <ModificarEnfermera
+            {showModal && selectedSecretaria && (
+                <ModificarSecretaria
                     show={showModal}
-                    enfermera={selectedEnfermera}
+                    secretaria={selectedSecretaria}
                     onClose={handleCloseModal}
                     triggerRefresh={triggerRefresh}
                 />
             )}
 
-            {showReasignarModal && selectedEnfermera && (
-                <ReasignarEnfermera
+            {showReasignarModal && selectedSecretaria && (
+                <ReasignarSecretaria
                     show={showReasignarModal}
-                    onClose={() => setShowReasignarModal(false)}
-                    enfermera={selectedEnfermera}
-                    onSuccess={fetchEnfermeras}
+                    secretaria={selectedSecretaria}
+                    onClose={() => {
+                        setShowReasignarModal(false);
+                        setSelectedSecretaria(null);
+                    }}
+                    onSuccess={fetchSecretarias}
                 />
             )}
         </div>
     );
 };
 
-export default TablaEnfermeras;
+export default TablaSecretarias;

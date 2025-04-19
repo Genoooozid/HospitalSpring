@@ -49,7 +49,7 @@ function Login() {
                 sessionStorage.setItem('token', token);
                 sessionStorage.setItem('username', username);
                 sessionStorage.setItem('rol', rol);
-                sessionStorage.setIte
+                sessionStorage.setItem('id', id);
                 navigate('/camaspisos');
             }
         } catch (error) {

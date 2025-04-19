@@ -3,6 +3,7 @@ import axios from 'axios';
 import Layout from '../components/Layout';
 import AgregarEnfermeraModal from './AgregarEnfermera';
 import TablaEnfermeras from './TablaEnfermera';
+import Buscador from '../components/Buscador';
 
 const Enfermeras = () => {
     const [showModal, setShowModal] = useState(false);
@@ -10,6 +11,7 @@ const Enfermeras = () => {
     const [loadingPisos, setLoadingPisos] = useState(true);
     const [error, setError] = useState(null);
     const [refresh, setRefresh] = useState(false);
+    const [filtroNombre, setFiltroNombre] = useState('');
 
     const triggerRefresh = () => setRefresh(prev => !prev);
 
@@ -42,7 +44,7 @@ const Enfermeras = () => {
                     <h1>Gestionar Enfermeras</h1>
                 </div>
 
-                <div className="d-flex justify-content-start mt-3">
+                <div className="d-flex justify-content-between align-items-center mt-3">
                     <button
                         className="btn btn-primary"
                         onClick={() => setShowModal(true)}
@@ -55,11 +57,18 @@ const Enfermeras = () => {
                             </>
                         ) : 'Agregar Enfermera'}
                     </button>
+
+                    <div style={{ width: '250px' }}>
+                        <Buscador
+                            value={filtroNombre}
+                            onChange={setFiltroNombre}
+                        />
+                    </div>
                 </div>
 
                 {error && <div className="alert alert-danger mt-3">{error}</div>}
 
-                <TablaEnfermeras refresh={refresh} />
+                <TablaEnfermeras refresh={refresh} filtroNombre={filtroNombre} />
 
                 <AgregarEnfermeraModal
                     show={showModal}
@@ -67,7 +76,6 @@ const Enfermeras = () => {
                     pisos={pisos}
                     loadingPisos={loadingPisos}
                     triggerRefresh={triggerRefresh}
-
                 />
             </div>
         </Layout>

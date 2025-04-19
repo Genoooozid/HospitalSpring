@@ -16,7 +16,7 @@ const DelegarCamasModal = ({ enfermeraActual, visible, onClose, onDelegadoExitos
                     `http://localhost:8080/api/usuarios/persona/enfermeras/piso/${enfermeraActual.piso.idPiso}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
-                const otrasEnfermeras = res.data.filter(e => e.id !== enfermeraActual.id);
+                const otrasEnfermeras = res.data.filter(e => e.id !== enfermeraActual.id && e.estatus);
                 setEnfermerasDelPiso(otrasEnfermeras);
                 setNoEnfermerasDisponibles(otrasEnfermeras.length === 0);
             } catch (err) {
@@ -53,13 +53,15 @@ const DelegarCamasModal = ({ enfermeraActual, visible, onClose, onDelegadoExitos
             onClose();
             onDelegadoExitosamente();
         } catch (error) {
+            const mensajeError = error.response?.data || 'Hubo un error al delegar las camas.';
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'Hubo un error al delegar las camas.',
+                text: mensajeError,
             });
         }
     };
+
 
     if (!visible) return null;
 

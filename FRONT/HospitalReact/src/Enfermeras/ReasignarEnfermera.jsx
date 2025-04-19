@@ -45,9 +45,9 @@ const ReasignarEnfermeraModal = ({ show, onClose, enfermera, onSuccess }) => {
     const realizarReasignacion = async () => {
         try {
             const token = sessionStorage.getItem('token');
-            const response = await axios.put(`http://localhost:8080/api/usuarios/persona/reasignar-enfermera`, null, {
+            const response = await axios.put(`http://localhost:8080/api/usuarios/persona/reasignar-usuario`, null, {
                 params: {
-                    enfermeraId: enfermera.id,
+                    usuarioId: enfermera.id,
                     nuevoPisoId: parseInt(nuevoPisoId)
                 },
                 headers: {

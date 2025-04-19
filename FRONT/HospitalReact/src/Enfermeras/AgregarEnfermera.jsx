@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { FiUser } from 'react-icons/fi';
@@ -17,6 +17,36 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
     });
 
     const [loading, setLoading] = useState(false);
+    const [secretariaPiso, setSecretariaPiso] = useState(null);
+    const rol = sessionStorage.getItem('rol');
+    const idUsuario = sessionStorage.getItem('id');
+    const token = sessionStorage.getItem('token');
+
+    useEffect(() => {
+        const fetchSecretariaPiso = async () => {
+            if (rol === 'secretaria') {
+                try {
+                    const response = await axios.get(`http://localhost:8080/api/usuarios/persona/secretarias/${idUsuario}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    });
+                    const piso = response.data.piso;
+                    if (piso) {
+                        setFormData(prev => ({
+                            ...prev,
+                            pisoAsignado: { idPiso: piso.idPiso }
+                        }));
+                        setSecretariaPiso(piso);
+                    }
+                } catch (error) {
+                    console.error('Error al obtener piso de la secretaria:', error);
+                }
+            }
+        };
+
+        fetchSecretariaPiso();
+    }, [rol, idUsuario, token]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -42,7 +72,7 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
             telefono: '',
             username: '',
             password: '',
-            pisoAsignado: { idPiso: '' }
+            pisoAsignado: { idPiso: secretariaPiso ? secretariaPiso.idPiso : '' }
         });
     };
 
@@ -51,8 +81,6 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
         setLoading(true);
 
         try {
-            const token = sessionStorage.getItem('token');
-
             await axios.post('http://localhost:8080/api/usuarios/persona/enfermera', formData, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -70,23 +98,18 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
 
             resetForm();
             onClose(true);
-
-            setTimeout(() => {
-                triggerRefresh();
-            }, 3000);
-            
+            setTimeout(() => triggerRefresh(), 3000);
         } catch (error) {
             console.error('Error:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: error.response?.data?.message || 'Ocurrió un error al agregar la enfermera',
+                text: error.response?.data?.mensaje || 'Ocurrió un error al agregar la enfermera',
             });
         } finally {
             setLoading(false);
         }
     };
-
 
     if (!show) return null;
 
@@ -103,103 +126,70 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
                     <div className="form-row">
                         <div className="form-group">
                             <label>Nombre(s):</label>
-                            <input
-                                type="text"
-                                name="nombre"
-                                value={formData.nombre}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} required />
                         </div>
                     </div>
 
                     <div className="form-row">
                         <div className="form-group">
                             <label>Apellido Paterno:</label>
-                            <input
-                                type="text"
-                                name="paterno"
-                                value={formData.paterno}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="text" name="paterno" value={formData.paterno} onChange={handleChange} required />
                         </div>
 
                         <div className="form-group">
                             <label>Apellido Materno:</label>
-                            <input
-                                type="text"
-                                name="materno"
-                                value={formData.materno}
-                                onChange={handleChange}
-                            />
+                            <input type="text" name="materno" value={formData.materno} onChange={handleChange} />
                         </div>
                     </div>
 
                     <div className="form-row">
                         <div className="form-group">
                             <label>Correo:</label>
-                            <input
-                                type="email"
-                                name="correo"
-                                value={formData.correo}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="email" name="correo" value={formData.correo} onChange={handleChange} required />
                         </div>
 
                         <div className="form-group">
-                            <label> Teléfono:</label>
-                            <input
-                                type="tel"
-                                name="telefono"
-                                value={formData.telefono}
-                                onChange={handleChange}
-                                required
-                            />
+                            <label>Teléfono:</label>
+                            <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} required />
                         </div>
                     </div>
 
                     <div className="form-row">
                         <div className="form-group">
                             <label>Nombre de Usuario:</label>
-                            <input
-                                type="text"
-                                name="username"
-                                value={formData.username}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="text" name="username" value={formData.username} onChange={handleChange} required />
                         </div>
 
                         <div className="form-group">
-                            <label> Contraseña:</label>
-                            <input
-                                type="password"
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                required
-                            />
+                            <label>Contraseña:</label>
+                            <input type="password" name="password" value={formData.password} onChange={handleChange} required />
                         </div>
                     </div>
 
                     <div className="form-group">
-                        <label> Piso Asignado:</label>
-                        <select
-                            name="idPiso"
-                            value={formData.pisoAsignado.idPiso}
-                            onChange={handleChange}
-                            required
-                            disabled={loadingPisos}
-                        >
-                            <option value="">{loadingPisos ? 'Cargando pisos...' : 'Seleccione un piso'}</option>
-                            {pisos.map((piso) => (
-                                <option key={piso.idPiso} value={piso.idPiso}>
-                                    Piso {piso.numeroPiso} - {piso.nombre}
-                                </option>
-                            ))}
-                        </select>
+                        <label>Piso Asignado:</label>
+                        {rol === 'secretaria' && secretariaPiso ? (
+                            <input
+                                type="text"
+                                value={`Piso - ${secretariaPiso.nombre}`}
+                                readOnly
+                            />
+                        ) : (
+                            <select
+                                name="idPiso"
+                                value={formData.pisoAsignado.idPiso}
+                                onChange={handleChange}
+                                required
+                                disabled={loadingPisos}
+                            >
+                                <option value="">{loadingPisos ? 'Cargando pisos...' : 'Seleccione un piso'}</option>
+                                {pisos.map((piso) => (
+                                    <option key={piso.idPiso} value={piso.idPiso}>
+                                        Piso {piso.numeroPiso} - {piso.nombre}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                     </div>
 
                     <div className="modal-footer">
@@ -214,11 +204,7 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
                         >
                             Cancelar
                         </button>
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={loading}
-                        >
+                        <button type="submit" className="btn btn-primary" disabled={loading}>
                             {loading ? (
                                 <>
                                     <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>

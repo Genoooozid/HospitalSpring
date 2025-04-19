@@ -3,7 +3,7 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import DelegarCamasModal from './DelegarCamas';
 
-const EliminarEnfermera = ({ enfermera, onSuccess }) => {
+const EliminarEnfermera = ({ enfermera, onSuccess, disabled = false }) => {
     const { id, estatus, nombre, paterno, materno } = enfermera;
     const token = sessionStorage.getItem('token');
 
@@ -11,6 +11,7 @@ const EliminarEnfermera = ({ enfermera, onSuccess }) => {
     const [reintentarEliminacion, setReintentarEliminacion] = useState(false);
 
     const handleEliminar = async () => {
+        if (disabled) return;
         Swal.fire({
             title: '¿Estás seguro?',
             text: `La enfermera ${nombre} ${paterno} ${materno} será desactivada.`,
@@ -120,11 +121,20 @@ const EliminarEnfermera = ({ enfermera, onSuccess }) => {
     return (
         <>
             {estatus ? (
-                <button className="btn btn-sm btn-danger" onClick={handleEliminar}>
+                <button
+                    className="btn btn-sm btn-danger"
+                    style={{width: '98px'}}
+                    onClick={handleEliminar}
+                    disabled={disabled}
+                >
                     Desactivar
                 </button>
             ) : (
-                <button className="btn btn-sm btn-success" onClick={handleReactivar}>
+                <button
+                    className="btn btn-sm btn-success"
+                    style={{width: '98px'}}
+                    onClick={handleReactivar}
+                >
                     Reactivar
                 </button>
             )}
