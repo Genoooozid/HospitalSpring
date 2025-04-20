@@ -57,7 +57,7 @@ const ReasignarSecretariaModal = ({ show, onClose, secretaria, onSuccess }) => {
         }
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (!nuevoPisoId) {
             Swal.fire('Error', 'Selecciona un piso antes de continuar.', 'warning');
             return;
@@ -65,6 +65,13 @@ const ReasignarSecretariaModal = ({ show, onClose, secretaria, onSuccess }) => {
 
         if (parseInt(nuevoPisoId) === secretaria.piso?.idPiso) {
             Swal.fire('Advertencia', 'La secretaria ya está asignada a ese piso.', 'info');
+            return;
+        }
+
+        const hayOtrasSecretarias = await verificarSecretariasEnPiso(secretaria.piso?.idPiso, secretaria.id);
+
+        if (!hayOtrasSecretarias) {
+            Swal.fire('Acción no permitida', 'No puedes reasignar a la única secretaria del piso.', 'warning');
             return;
         }
 
@@ -83,6 +90,24 @@ const ReasignarSecretariaModal = ({ show, onClose, secretaria, onSuccess }) => {
             }
         });
     };
+
+    const verificarSecretariasEnPiso = async (pisoId, secretariaId) => {
+        try {
+            const token = sessionStorage.getItem('token');
+            const response = await axios.get(`http://localhost:8080/api/usuarios/persona/secretarias/piso/${pisoId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            const secretarias = response.data;
+            return secretarias.some((s) => s.id !== secretariaId);
+        } catch (error) {
+            console.error('Error al verificar secretarias en el piso:', error);
+            return false;
+        }
+    };
+
 
     useEffect(() => {
         if (show) {

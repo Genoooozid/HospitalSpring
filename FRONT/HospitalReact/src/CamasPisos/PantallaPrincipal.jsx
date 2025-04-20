@@ -30,6 +30,35 @@ const PantallaPrincipal = () => {
     enfermeraId: null,
   });
 
+  const [rol, setRol] = useState('');
+  const [pisoSecretaria, setPisoSecretaria] = useState(null);
+
+  useEffect(() => {
+    const rolGuardado = localStorage.getItem('rol');
+    setRol(rolGuardado);
+
+    const idUsuario = localStorage.getItem('id');
+
+    if (rolGuardado === 'secretaria' && idUsuario) {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+
+      axios.get(`http://localhost:8080/api/usuarios/persona/secretarias/${idUsuario}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => {
+          const piso = response.data.piso;
+          setPisoSecretaria(piso);
+          setPisoSeleccionado(piso); // Selecciona automáticamente el piso
+          cargarCamasPorPiso(piso.idPiso);
+        })
+        .catch(error => {
+          manejarError(error);
+        });
+    }
+  }, []);
 
   const handleAsignarPaciente = (cama) => {
     const enfermeraId = localStorage.getItem('id'); // o sessionStorage
@@ -176,15 +205,15 @@ const PantallaPrincipal = () => {
 
   const registrarPaciente = async () => {
     const { nombre, paterno, materno, telefono, camaId, enfermeraId } = datosPaciente;
-  
+
     if (!nombre || !paterno || !materno || !telefono) {
       toast.error('Todos los campos son obligatorios');
       return;
     }
-  
+
     try {
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  
+
       await axios.post('http://localhost:8080/pacientes/registrar', {
         nombre,
         paterno,
@@ -198,16 +227,16 @@ const PantallaPrincipal = () => {
           'Content-Type': 'application/json'
         }
       });
-  
+
       toast.success('Paciente asignado exitosamente');
       setShowModalPaciente(false);
       if (pisoSeleccionado) await cargarCamasPorPiso(pisoSeleccionado.idPiso);
-  
+
     } catch (error) {
       manejarError(error);
     }
   };
-  
+
 
   return (
     <Layout>
@@ -223,14 +252,39 @@ const PantallaPrincipal = () => {
         <h1>Gestionar Camas y Pisos</h1>
         <div className="d-flex justify-content-between my-3">
           <div className="dropdown">
-            <button
-              className="btn btn-outline-dark dropdown-toggle"
-              type="button"
-              onClick={() => setMostrarDropdown(!mostrarDropdown)}
-              disabled={loadingPisos}
-            >
-              {loadingPisos ? 'Cargando pisos...' : (pisoSeleccionado ? pisoSeleccionado.nombre : 'Escoger Piso')}
-            </button>
+            {rol === 'secretaria' && pisoSecretaria ? (
+              <button className="btn btn-outline-dark" disabled>
+                {pisoSecretaria.nombre}
+              </button>
+            ) : (
+              <div className="dropdown">
+                <button
+                  className="btn btn-outline-dark dropdown-toggle"
+                  type="button"
+                  onClick={() => setMostrarDropdown(!mostrarDropdown)}
+                  disabled={loadingPisos}
+                >
+                  {loadingPisos ? 'Cargando pisos...' : (pisoSeleccionado ? pisoSeleccionado.nombre : 'Escoger Piso')}
+                </button>
+                {mostrarDropdown && (
+                  <div className="dropdown-menu show" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    {pisos.length > 0 ? (
+                      pisos.map((piso) => (
+                        <button
+                          key={piso.idPiso}
+                          className="dropdown-item"
+                          onClick={() => seleccionarPiso(piso)}
+                        >
+                          {piso.nombre}
+                        </button>
+                      ))
+                    ) : (
+                      <span className="dropdown-item-text">No hay pisos disponibles</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             {mostrarDropdown && (
               <div className="dropdown-menu show" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 {pisos.length > 0 ? (

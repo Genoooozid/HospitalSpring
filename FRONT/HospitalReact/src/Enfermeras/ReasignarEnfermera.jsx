@@ -103,6 +103,14 @@ const ReasignarEnfermeraModal = ({ show, onClose, enfermera, onSuccess }) => {
             return;
         }
 
+        const enfermeraActivaEnElPiso = enfermerasDelPiso.filter(e => e.estatus === true);
+
+        if (enfermeraActivaEnElPiso.length === 1 && enfermeraActivaEnElPiso[0].id === enfermera.id) {
+            Swal.fire('Advertencia', 'No puedes reasignar a la única enfermera activa asignada a este piso.', 'warning');
+            return;
+        }
+
+
         Swal.fire({
             title: '¿Estás seguro?',
             text: 'La enfermera será reasignada al nuevo piso.',
@@ -118,6 +126,7 @@ const ReasignarEnfermeraModal = ({ show, onClose, enfermera, onSuccess }) => {
             }
         });
     };
+
 
     const handleDelegacionExitosa = async () => {
         setShowDelegarCamasModal(false);

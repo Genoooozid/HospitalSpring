@@ -9,6 +9,7 @@ import {
 import EliminarEnfermera from './EliminarEnfermera';
 import ModificarEnfermera from './ModificarEnfermera';
 import ReasignarEnfermera from './ReasignarEnfermera';
+import AsignarCamasAEnfermera from './AsignarCamasAEnfermera';
 
 const TablaEnfermeras = ({ refresh, filtroNombre }) => {
     const [enfermeras, setEnfermeras] = useState([]);
@@ -17,6 +18,9 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
     const [showModal, setShowModal] = useState(false);
     const [refrescar, setRefrescar] = useState(false);
     const [showReasignarModal, setShowReasignarModal] = useState(false);
+    const [showAsignarModal, setShowAsignarModal] = useState(false);
+
+    const rol = sessionStorage.getItem('rol'); 
 
     const triggerRefresh = () => setRefrescar(prev => !prev);
 
@@ -25,28 +29,28 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
             const token = sessionStorage.getItem('token');
             const rol = sessionStorage.getItem('rol');
             const idUsuario = sessionStorage.getItem('id');
-    
+
             let url = 'http://localhost:8080/api/usuarios/persona/enfermeras';
-    
+
             if (rol === 'secretaria') {
                 const secretariaResponse = await axios.get(`http://localhost:8080/api/usuarios/persona/secretarias/${idUsuario}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                     },
                 });
-    
+
                 const pisoId = secretariaResponse.data.piso?.idPiso;
                 if (pisoId) {
                     url = `http://localhost:8080/api/usuarios/persona/enfermeras/piso/${pisoId}`;
                 }
             }
-    
+
             const response = await axios.get(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
             });
-    
+
             setEnfermeras(response.data);
         } catch (error) {
             console.error('Error al obtener enfermeras:', error);
@@ -54,7 +58,7 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
             setLoading(false);
         }
     };
-    
+
 
     useEffect(() => {
         fetchEnfermeras();
@@ -74,6 +78,11 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
     const handleReasignar = (enfermera) => {
         setSelectedEnfermera(enfermera);
         setShowReasignarModal(true);
+    };
+
+    const handleAsignar = (enfermera) => {
+        setSelectedEnfermera(enfermera);
+        setShowAsignarModal(true);
     };
 
     const enfermerasFiltradas = useMemo(() => {
@@ -128,6 +137,15 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
                             disabled={desactivada}
                         >
                             Reasignar
+                        </button>
+
+                        <button
+                            className="btn btn-sm btn-info d-flex align-items-center gap-1"
+                            onClick={() => handleAsignar(enfermera)}
+                            title="Asignar camas"
+                            disabled={desactivada || rol === 'admin'} 
+                        >
+                            Asignar Cama
                         </button>
 
                         <button
@@ -202,6 +220,18 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
                     onSuccess={fetchEnfermeras}
                 />
             )}
+
+            {showAsignarModal && selectedEnfermera && (
+
+                <AsignarCamasAEnfermera
+                    show={showAsignarModal}
+                    enfermera={selectedEnfermera}
+                    onClose={() => setShowAsignarModal(false)}
+                    onSuccess={fetchEnfermeras}
+                />
+
+            )}
+
         </div>
     );
 };
