@@ -39,17 +39,20 @@ function Login() {
                 });
 
                 // Extraer los valores de la respuesta
-                const { token, rol, id } = response.data.data;
+                const { token, rol, id, nombreCompleto } = response.data.data;
 
                 localStorage.setItem('token', token);
                 localStorage.setItem('username', username);
                 localStorage.setItem('rol', rol);
                 localStorage.setItem('id', id);
+                localStorage.setItem('nombreCompleto', nombreCompleto);
 
+
+                sessionStorage.setItem('id', id);
                 sessionStorage.setItem('token', token);
                 sessionStorage.setItem('username', username);
                 sessionStorage.setItem('rol', rol);
-                sessionStorage.setItem('id', id);
+                sessionStorage.setItem('nombreCompleto', nombreCompleto);
                 navigate('/camaspisos');
             }
         } catch (error) {

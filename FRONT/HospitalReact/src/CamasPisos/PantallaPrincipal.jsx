@@ -31,7 +31,67 @@ const PantallaPrincipal = () => {
   });
 
   const [rol, setRol] = useState('');
+  const [idUsuario, setIdUsuario] = useState(null);
+  const [token, setToken] = useState('');
   const [pisoSecretaria, setPisoSecretaria] = useState(null);
+  const [esEnfermera, setEsEnfermera] = useState(false);
+  const [pisoEnfermera, setPisoEnfermera] = useState(null);
+
+
+  useEffect(() => {
+    const storedRol = localStorage.getItem('rol');
+    const storedId = localStorage.getItem('id');
+    const storedToken = localStorage.getItem('token');
+  
+    if (storedRol) setRol(storedRol);
+    if (storedId) setIdUsuario(parseInt(storedId));
+    if (storedToken) setToken(storedToken);
+  }, []);
+  
+  
+  useEffect(() => {
+    if (!rol || !token) return;
+  
+    if (rol === 'enfermera') {
+      axios.get('http://localhost:8080/api/usuarios/persona/enfermeras', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      })
+      .then(res => {
+        const enfermeras = Array.isArray(res.data) ? res.data : [res.data];
+        const enfermera = enfermeras.find(e => e.id === idUsuario);
+  
+        if (enfermera && enfermera.piso) {
+          setPisoEnfermera(enfermera.piso);
+          setPisoSeleccionado(enfermera.piso); // Para manejar estado general
+          cargarCamasPorPiso(enfermera.piso.idPiso); // <- Aquí estaba el problema original
+        }
+      })
+      .catch(err => {
+        console.error('Error al obtener piso de enfermera:', err);
+      })
+      .finally(() => setLoadingPisos(false));
+  
+    } else {
+      // Admin o secretaria
+      axios.get('http://localhost:8080/pisos/listar', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      })
+      .then(res => {
+        setPisos(res.data);
+      })
+      .catch(err => {
+        console.error('Error al cargar pisos:', err);
+      })
+      .finally(() => setLoadingPisos(false));
+    }
+  }, [refreshPisos, rol, token, idUsuario]);
+  
+  
+
 
   useEffect(() => {
     const rolGuardado = localStorage.getItem('rol');
@@ -51,7 +111,7 @@ const PantallaPrincipal = () => {
         .then(response => {
           const piso = response.data.piso;
           setPisoSecretaria(piso);
-          setPisoSeleccionado(piso); // Selecciona automáticamente el piso
+          setPisoSeleccionado(piso);
           cargarCamasPorPiso(piso.idPiso);
         })
         .catch(error => {
@@ -113,15 +173,18 @@ const PantallaPrincipal = () => {
     try {
       setLoadingCamas(true);
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-
+      const rol = sessionStorage.getItem('rol') || localStorage.getItem('rol');
+      const nombreCompleto = sessionStorage.getItem('nombreCompleto') || localStorage.getItem('nombreCompleto');
+  
       const response = await axios.get(`http://localhost:8080/camas/piso/${idPiso}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-
-      const camasTransformadas = response.data.map(cama => ({
+  
+ 
+      let camasTransformadas = response.data.map(cama => ({
         id: cama.idCama,
         nombre: cama.nombre,
         estado: cama.estadoCama === 'Ocupada' ? 'Ocupada' : 'Desocupada',
@@ -129,14 +192,22 @@ const PantallaPrincipal = () => {
         enfermera: cama.nombreEnfermera,
         pacienteId: cama.idPaciente
       }));
-
+  
+      // Luego filtramos solo las camas de la enfermera logueada (si aplica)
+      if (rol === 'enfermera' && nombreCompleto) {
+        camasTransformadas = camasTransformadas.filter(
+          cama => cama.enfermera === nombreCompleto
+        );
+      }
+  
       setCamas(camasTransformadas);
-      setLoadingCamas(false);
     } catch (error) {
-      setLoadingCamas(false);
       manejarError(error);
+    } finally {
+      setLoadingCamas(false);
     }
   };
+  
 
   const manejarError = (error) => {
     if (error.response) {
@@ -237,6 +308,13 @@ const PantallaPrincipal = () => {
     }
   };
 
+  const handleCloseModalCamas = async () => {
+    setShowModalCamas(false);
+    if (pisoSeleccionado) {
+      await cargarCamasPorPiso(pisoSeleccionado.idPiso);
+    }
+  };
+
 
   return (
     <Layout>
@@ -246,40 +324,41 @@ const PantallaPrincipal = () => {
         onHide={() => setShowModalPisos(false)}
         onUpdate={() => setRefreshPisos(true)}
       />
-      <GestionarCamas show={showModalCamas} onHide={() => setShowModalCamas(false)} />
+      <GestionarCamas show={showModalCamas} onHide={handleCloseModalCamas} onUpdate={handleCloseModalCamas} />
+
 
       <div className="container text-center mt-4">
         <h1>Gestionar Camas y Pisos</h1>
         <div className="d-flex justify-content-between my-3">
-          <div className="dropdown">
-            {rol === 'secretaria' && pisoSecretaria ? (
-              <button className="btn btn-outline-dark" disabled>
-                {pisoSecretaria.nombre}
+        <div className="dropdown">
+          {(rol === 'secretaria' && pisoSecretaria) || (rol === 'enfermera' && pisoEnfermera) ? (
+            <button className="btn btn-outline-dark" disabled>
+              {(rol === 'secretaria' ? pisoSecretaria?.nombre : pisoEnfermera?.nombre) || 'Piso asignado'}
+            </button>
+          ) : (
+            <div className="dropdown">
+              <button
+                className="btn btn-outline-dark dropdown-toggle"
+                type="button"
+                onClick={() => setMostrarDropdown(!mostrarDropdown)}
+                disabled={loadingPisos}
+              >
+                {loadingPisos ? 'Cargando pisos...' : (pisoSeleccionado ? pisoSeleccionado.nombre : 'Escoger Piso')}
               </button>
-            ) : (
-              <div className="dropdown">
-                <button
-                  className="btn btn-outline-dark dropdown-toggle"
-                  type="button"
-                  onClick={() => setMostrarDropdown(!mostrarDropdown)}
-                  disabled={loadingPisos}
-                >
-                  {loadingPisos ? 'Cargando pisos...' : (pisoSeleccionado ? pisoSeleccionado.nombre : 'Escoger Piso')}
-                </button>
-                {mostrarDropdown && (
-                  <div className="dropdown-menu show" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                    {pisos.length > 0 ? (
-                      pisos.map((piso) => (
-                        <button
-                          key={piso.idPiso}
-                          className="dropdown-item"
-                          onClick={() => seleccionarPiso(piso)}
-                        >
-                          {piso.nombre}
-                        </button>
-                      ))
-                    ) : (
-                      <span className="dropdown-item-text">No hay pisos disponibles</span>
+              {mostrarDropdown && (
+                <div className="dropdown-menu show" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  {pisos.length > 0 ? (
+                    pisos.map((piso) => (
+                      <button
+                        key={piso.idPiso}
+                        className="dropdown-item"
+                        onClick={() => seleccionarPiso(piso)}
+                      >
+                        {piso.nombre}
+                      </button>
+                    ))
+                  ) : (
+                    <span className="dropdown-item-text">No hay pisos disponibles</span>
                     )}
                   </div>
                 )}
@@ -303,9 +382,18 @@ const PantallaPrincipal = () => {
               </div>
             )}
           </div>
+
+          
           <div>
-            <button className="btn btn-outline-dark mx-2" onClick={() => setShowModalCamas(true)}>Gestionar Camas</button>
-            <button className="btn btn-outline-dark" onClick={() => setShowModalPisos(true)}>Gestionar Pisos</button>
+            <button className="btn btn-outline-dark mx-2" onClick={() => setShowModalCamas(true)} hidden={rol !== 'admin' && rol !== 'secretaria'}>Gestionar Camas</button>
+            <button
+              className="btn btn-outline-dark"
+              onClick={() => setShowModalPisos(true)}
+              hidden={rol !== 'admin'}
+            >
+              Gestionar Pisos
+            </button>
+
           </div>
         </div>
 
@@ -332,10 +420,11 @@ const PantallaPrincipal = () => {
                   onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                   onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                   onClick={(e) => {
-                    if (e.target.tagName !== 'BUTTON') {
+                    if ((rol === 'enfermera') && e.target.tagName !== 'BUTTON') {
                       handleDesocuparCama(cama);
                     }
                   }}
+                  
 
                 >
                   <div className="card p-3 text-center" style={{ width: '250px' }}>
@@ -349,14 +438,16 @@ const PantallaPrincipal = () => {
                       {cama.estado === 'Ocupada' ? `Ocupada por ${cama.paciente}` : 'Disponible'}
                     </p>
                     <p className="text-muted">Enf. {cama.enfermera}</p>
-                    {cama.estado === 'Desocupada' && (
-                      <button
-                        className="btn btn-sm btn-primary mt-2"
-                        onClick={() => handleAsignarPaciente(cama)}
-                      >
-                        Asignar Paciente
-                      </button>
+                    {cama.estado === 'Desocupada' && rol !== 'secretaria' && (
+                     <button
+                     className="btn btn-sm btn-primary mt-2"
+                     onClick={() => handleAsignarPaciente(cama)}
+                     hidden={rol !== 'enfermera'}
+                   >
+                     Asignar Paciente
+                   </button>
                     )}
+
                   </div>
                 </div>
               ))

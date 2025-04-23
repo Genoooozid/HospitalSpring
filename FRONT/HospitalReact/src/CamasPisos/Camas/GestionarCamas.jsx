@@ -11,6 +11,13 @@ const GestionarCamas = ({ show, onHide }) => {
   const [pisoSeleccionado, setPisoSeleccionado] = useState(null);
   const [enfermeras, setEnfermeras] = useState([]);
   const [enfermeraSeleccionada, setEnfermeraSeleccionada] = useState(null);
+  const [mostrarFormularioAgregar, setMostrarFormularioAgregar] = useState(false);
+  const [cantidadCamas, setCantidadCamas] = useState('');
+  const [rol, setRol] = useState('');
+  const [pisoDeSecretaria, setPisoDeSecretaria] = useState(null);
+
+
+
 
   useEffect(() => {
     if (show) {
@@ -71,6 +78,65 @@ const GestionarCamas = ({ show, onHide }) => {
     toast.info(`Eliminar cama con ID ${idCama} (por implementar)`);
   };
 
+  const handleAgregarCamas = async () => {
+    const cantidadValida = /^\d+$/.test(cantidadCamas) && parseInt(cantidadCamas) > 0;
+
+    if (!cantidadValida) {
+      toast.warning('Ingrese una cantidad válida de camas (número entero mayor a 0)');
+      return;
+    }
+
+    try {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      await axios.post('http://localhost:8080/camas/insertar', {
+        idPiso: pisoSeleccionado.idPiso,
+        cantidadCamas: parseInt(cantidadCamas),
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+
+      toast.success('Camas agregadas correctamente');
+
+      setMostrarFormularioAgregar(false);
+      setCantidadCamas('');
+      cargarCamasDelPiso(pisoSeleccionado.idPiso);
+    } catch (error) {
+      toast.error('Error al agregar camas');
+    }
+  };
+
+
+  useEffect(() => {
+    if (show) {
+      const rolGuardado = localStorage.getItem('rol');
+      const idUsuario = localStorage.getItem('id');
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      setRol(rolGuardado);
+
+      if (rolGuardado === 'secretaria' && idUsuario) {
+        axios.get(`http://localhost:8080/api/usuarios/persona/secretarias/${idUsuario}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => {
+            const piso = response.data.piso;
+            setPisoSeleccionado(piso);
+            setPisoDeSecretaria(piso);
+            cargarCamasDelPiso(piso.idPiso);
+          })
+          .catch(() => toast.error('Error al obtener el piso de la secretaria'));
+      } else {
+        obtenerPisos(); // Sólo si NO es secretaria
+      }
+    }
+  }, [show]);
+
+
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
       <Modal.Header closeButton>
@@ -79,19 +145,37 @@ const GestionarCamas = ({ show, onHide }) => {
       <Modal.Body>
         <div className="d-flex justify-content-between mb-3 gap-2 flex-wrap">
           {/* Escoger Piso */}
-          <Dropdown as={ButtonGroup}>
-            <Button variant="outline-primary">
-              {pisoSeleccionado ? pisoSeleccionado.nombre : 'Escoger Piso'}
+          {rol === 'secretaria' && pisoDeSecretaria ? (
+            <Button variant="outline-primary" disabled>
+              {pisoDeSecretaria.nombre}
             </Button>
-            <Dropdown.Toggle split variant="outline-primary" />
-            <Dropdown.Menu>
-              {pisos.map((p) => (
-                <Dropdown.Item key={p.idPiso} onClick={() => handleSeleccionarPiso(p)}>
-                  {p.nombre}
-                </Dropdown.Item>
-              ))}
-            </Dropdown.Menu>
-          </Dropdown>
+          ) : (
+            <Dropdown as={ButtonGroup}>
+              <Button variant="outline-primary">
+                {pisoSeleccionado ? pisoSeleccionado.nombre : 'Escoger Piso'}
+              </Button>
+              <Dropdown.Toggle split variant="outline-primary" />
+              <Dropdown.Menu>
+                {pisos.map((p) => (
+                  <Dropdown.Item key={p.idPiso} onClick={() => handleSeleccionarPiso(p)}>
+                    {p.nombre}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+          )}
+
+
+
+          {/* Botón Agregar Camas */}
+          {pisoSeleccionado && (
+            <Button
+              variant="outline-warning"
+              onClick={() => setMostrarFormularioAgregar(!mostrarFormularioAgregar)}
+            >
+              Agregar Camas
+            </Button>
+          )}
 
           {/* Filtrar por Enfermera */}
           {pisoSeleccionado && enfermeras.length > 0 && (
@@ -112,6 +196,21 @@ const GestionarCamas = ({ show, onHide }) => {
             </Dropdown>
           )}
         </div>
+
+        {mostrarFormularioAgregar && (
+          <div className="mb-3 d-flex flex-column flex-sm-row align-items-start gap-2">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Cantidad de camas"
+              value={cantidadCamas}
+              onChange={(e) => setCantidadCamas(e.target.value)}
+            />
+            <Button variant="success" onClick={handleAgregarCamas}>
+              Confirmar
+            </Button>
+          </div>
+        )}
 
         {/* Tabla */}
         {pisoSeleccionado ? (
