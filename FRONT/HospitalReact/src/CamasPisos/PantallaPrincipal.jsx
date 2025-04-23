@@ -8,7 +8,7 @@ import CamaOcupada from '../assets/camaocupada.png';
 import CamaDesocupada from '../assets/camadesocupada.png';
 import GestionarPisos from '../CamasPisos/Pisos/GestionarPisos';
 import GestionarCamas from '../CamasPisos/Camas/GestionarCamas';
-import { Modal, Button } from 'react-bootstrap';
+import { Modal, Button, Form } from 'react-bootstrap';
 
 const PantallaPrincipal = () => {
   const [pisos, setPisos] = useState([]);
@@ -42,37 +42,37 @@ const PantallaPrincipal = () => {
     const storedRol = localStorage.getItem('rol');
     const storedId = localStorage.getItem('id');
     const storedToken = localStorage.getItem('token');
-  
+
     if (storedRol) setRol(storedRol);
     if (storedId) setIdUsuario(parseInt(storedId));
     if (storedToken) setToken(storedToken);
   }, []);
-  
-  
+
+
   useEffect(() => {
     if (!rol || !token) return;
-  
+
     if (rol === 'enfermera') {
       axios.get('http://localhost:8080/api/usuarios/persona/enfermeras', {
         headers: {
           Authorization: `Bearer ${token}`,
         }
       })
-      .then(res => {
-        const enfermeras = Array.isArray(res.data) ? res.data : [res.data];
-        const enfermera = enfermeras.find(e => e.id === idUsuario);
-  
-        if (enfermera && enfermera.piso) {
-          setPisoEnfermera(enfermera.piso);
-          setPisoSeleccionado(enfermera.piso); // Para manejar estado general
-          cargarCamasPorPiso(enfermera.piso.idPiso); // <- Aquí estaba el problema original
-        }
-      })
-      .catch(err => {
-        console.error('Error al obtener piso de enfermera:', err);
-      })
-      .finally(() => setLoadingPisos(false));
-  
+        .then(res => {
+          const enfermeras = Array.isArray(res.data) ? res.data : [res.data];
+          const enfermera = enfermeras.find(e => e.id === idUsuario);
+
+          if (enfermera && enfermera.piso) {
+            setPisoEnfermera(enfermera.piso);
+            setPisoSeleccionado(enfermera.piso);
+            cargarCamasPorPiso(enfermera.piso.idPiso);
+          }
+        })
+        .catch(err => {
+          console.error('Error al obtener piso de enfermera:', err);
+        })
+        .finally(() => setLoadingPisos(false));
+
     } else {
       // Admin o secretaria
       axios.get('http://localhost:8080/pisos/listar', {
@@ -80,17 +80,17 @@ const PantallaPrincipal = () => {
           Authorization: `Bearer ${token}`,
         }
       })
-      .then(res => {
-        setPisos(res.data);
-      })
-      .catch(err => {
-        console.error('Error al cargar pisos:', err);
-      })
-      .finally(() => setLoadingPisos(false));
+        .then(res => {
+          setPisos(res.data);
+        })
+        .catch(err => {
+          console.error('Error al cargar pisos:', err);
+        })
+        .finally(() => setLoadingPisos(false));
     }
   }, [refreshPisos, rol, token, idUsuario]);
-  
-  
+
+
 
 
   useEffect(() => {
@@ -175,15 +175,15 @@ const PantallaPrincipal = () => {
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       const rol = sessionStorage.getItem('rol') || localStorage.getItem('rol');
       const nombreCompleto = sessionStorage.getItem('nombreCompleto') || localStorage.getItem('nombreCompleto');
-  
+
       const response = await axios.get(`http://localhost:8080/camas/piso/${idPiso}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-  
- 
+
+
       let camasTransformadas = response.data.map(cama => ({
         id: cama.idCama,
         nombre: cama.nombre,
@@ -192,14 +192,14 @@ const PantallaPrincipal = () => {
         enfermera: cama.nombreEnfermera,
         pacienteId: cama.idPaciente
       }));
-  
+
       // Luego filtramos solo las camas de la enfermera logueada (si aplica)
       if (rol === 'enfermera' && nombreCompleto) {
         camasTransformadas = camasTransformadas.filter(
           cama => cama.enfermera === nombreCompleto
         );
       }
-  
+
       setCamas(camasTransformadas);
     } catch (error) {
       manejarError(error);
@@ -207,7 +207,7 @@ const PantallaPrincipal = () => {
       setLoadingCamas(false);
     }
   };
-  
+
 
   const manejarError = (error) => {
     if (error.response) {
@@ -277,8 +277,33 @@ const PantallaPrincipal = () => {
   const registrarPaciente = async () => {
     const { nombre, paterno, materno, telefono, camaId, enfermeraId } = datosPaciente;
 
+
     if (!nombre || !paterno || !materno || !telefono) {
       toast.error('Todos los campos son obligatorios');
+      return;
+    }
+
+
+    const soloLetras = /^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]+$/;
+    const soloNumeros = /^\d{10}$/;
+
+    if (!soloLetras.test(nombre)) {
+      toast.error('El nombre solo debe contener letras');
+      return;
+    }
+
+    if (!soloLetras.test(paterno)) {
+      toast.error('El apellido paterno solo debe contener letras');
+      return;
+    }
+
+    if (!soloLetras.test(materno)) {
+      toast.error('El apellido materno solo debe contener letras');
+      return;
+    }
+
+    if (!soloNumeros.test(telefono)) {
+      toast.error('El teléfono debe tener exactamente 10 dígitos');
       return;
     }
 
@@ -315,6 +340,7 @@ const PantallaPrincipal = () => {
     }
   };
 
+  
 
   return (
     <Layout>
@@ -330,35 +356,35 @@ const PantallaPrincipal = () => {
       <div className="container text-center mt-4">
         <h1>Gestionar Camas y Pisos</h1>
         <div className="d-flex justify-content-between my-3">
-        <div className="dropdown">
-          {(rol === 'secretaria' && pisoSecretaria) || (rol === 'enfermera' && pisoEnfermera) ? (
-            <button className="btn btn-outline-dark" disabled>
-              {(rol === 'secretaria' ? pisoSecretaria?.nombre : pisoEnfermera?.nombre) || 'Piso asignado'}
-            </button>
-          ) : (
-            <div className="dropdown">
-              <button
-                className="btn btn-outline-dark dropdown-toggle"
-                type="button"
-                onClick={() => setMostrarDropdown(!mostrarDropdown)}
-                disabled={loadingPisos}
-              >
-                {loadingPisos ? 'Cargando pisos...' : (pisoSeleccionado ? pisoSeleccionado.nombre : 'Escoger Piso')}
+          <div className="dropdown">
+            {(rol === 'secretaria' && pisoSecretaria) || (rol === 'enfermera' && pisoEnfermera) ? (
+              <button className="btn btn-outline-dark" disabled>
+                {(rol === 'secretaria' ? pisoSecretaria?.nombre : pisoEnfermera?.nombre) || 'Piso asignado'}
               </button>
-              {mostrarDropdown && (
-                <div className="dropdown-menu show" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                  {pisos.length > 0 ? (
-                    pisos.map((piso) => (
-                      <button
-                        key={piso.idPiso}
-                        className="dropdown-item"
-                        onClick={() => seleccionarPiso(piso)}
-                      >
-                        {piso.nombre}
-                      </button>
-                    ))
-                  ) : (
-                    <span className="dropdown-item-text">No hay pisos disponibles</span>
+            ) : (
+              <div className="dropdown">
+                <button
+                  className="btn btn-outline-dark dropdown-toggle"
+                  type="button"
+                  onClick={() => setMostrarDropdown(!mostrarDropdown)}
+                  disabled={loadingPisos}
+                >
+                  {loadingPisos ? 'Cargando pisos...' : (pisoSeleccionado ? pisoSeleccionado.nombre : 'Escoger Piso')}
+                </button>
+                {mostrarDropdown && (
+                  <div className="dropdown-menu show" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    {pisos.length > 0 ? (
+                      pisos.map((piso) => (
+                        <button
+                          key={piso.idPiso}
+                          className="dropdown-item"
+                          onClick={() => seleccionarPiso(piso)}
+                        >
+                          {piso.nombre}
+                        </button>
+                      ))
+                    ) : (
+                      <span className="dropdown-item-text">No hay pisos disponibles</span>
                     )}
                   </div>
                 )}
@@ -383,7 +409,7 @@ const PantallaPrincipal = () => {
             )}
           </div>
 
-          
+
           <div>
             <button className="btn btn-outline-dark mx-2" onClick={() => setShowModalCamas(true)} hidden={rol !== 'admin' && rol !== 'secretaria'}>Gestionar Camas</button>
             <button
@@ -424,7 +450,7 @@ const PantallaPrincipal = () => {
                       handleDesocuparCama(cama);
                     }
                   }}
-                  
+
 
                 >
                   <div className="card p-3 text-center" style={{ width: '250px' }}>
@@ -439,13 +465,13 @@ const PantallaPrincipal = () => {
                     </p>
                     <p className="text-muted">Enf. {cama.enfermera}</p>
                     {cama.estado === 'Desocupada' && rol !== 'secretaria' && (
-                     <button
-                     className="btn btn-sm btn-primary mt-2"
-                     onClick={() => handleAsignarPaciente(cama)}
-                     hidden={rol !== 'enfermera'}
-                   >
-                     Asignar Paciente
-                   </button>
+                      <button
+                        className="btn btn-sm btn-primary mt-2"
+                        onClick={() => handleAsignarPaciente(cama)}
+                        hidden={rol !== 'enfermera'}
+                      >
+                        Asignar Paciente
+                      </button>
                     )}
 
                   </div>
@@ -465,10 +491,82 @@ const PantallaPrincipal = () => {
         </Modal.Header>
         <Modal.Body>
           <form>
-            <input className="form-control my-2" placeholder="Nombre" value={datosPaciente.nombre} onChange={(e) => setDatosPaciente({ ...datosPaciente, nombre: e.target.value })} required />
-            <input className="form-control my-2" placeholder="Apellido Paterno" value={datosPaciente.paterno} onChange={(e) => setDatosPaciente({ ...datosPaciente, paterno: e.target.value })} required />
-            <input className="form-control my-2" placeholder="Apellido Materno" value={datosPaciente.materno} onChange={(e) => setDatosPaciente({ ...datosPaciente, materno: e.target.value })} required />
-            <input className="form-control my-2" placeholder="Teléfono" value={datosPaciente.telefono} onChange={(e) => setDatosPaciente({ ...datosPaciente, telefono: e.target.value })} required />
+            <Form.Group className="mb-3">
+              <Form.Label>Nombre</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Nombre"
+                value={datosPaciente.nombre}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]*$/.test(value)) {
+                    setDatosPaciente({ ...datosPaciente, nombre: value });
+                  }
+                }}
+                required
+              />
+              <Form.Text className="text-muted">
+                Solo letras
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Apellido Paterno</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Apellido Paterno"
+                value={datosPaciente.paterno}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]*$/.test(value)) {
+                    setDatosPaciente({ ...datosPaciente, paterno: value });
+                  }
+                }}
+                required
+              />
+              <Form.Text className="text-muted">
+                Solo letras
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Apellido Materno</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Apellido Materno"
+                value={datosPaciente.materno}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^[A-Za-zÁÉÍÓÚáéíóúñÑ\s]*$/.test(value)) {
+                    setDatosPaciente({ ...datosPaciente, materno: value });
+                  }
+                }}
+                required
+              />
+              <Form.Text className="text-muted">
+                Solo letras
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Teléfono</Form.Label>
+              <Form.Control
+                type="tel"
+                placeholder="Teléfono"
+                value={datosPaciente.telefono}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d{0,10}$/.test(value)) {
+                    setDatosPaciente({ ...datosPaciente, telefono: value });
+                  }
+                }}
+                maxLength={10}
+                required
+              />
+              <Form.Text className="text-muted">
+                10 dígitos exactos
+              </Form.Text>
+            </Form.Group>
           </form>
         </Modal.Body>
         <Modal.Footer>
