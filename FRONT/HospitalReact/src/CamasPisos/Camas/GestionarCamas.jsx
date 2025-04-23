@@ -3,6 +3,7 @@ import { Modal, Button, Table, Dropdown, ButtonGroup } from 'react-bootstrap';
 import axios from 'axios';
 import { FaTrash } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 
 const GestionarCamas = ({ show, onHide }) => {
   const [pisos, setPisos] = useState([]);
@@ -74,9 +75,7 @@ const GestionarCamas = ({ show, onHide }) => {
     setCamasFiltradas(camas);
   };
 
-  const handleEliminarCama = (idCama) => {
-    toast.info(`Eliminar cama con ID ${idCama} (por implementar)`);
-  };
+
 
   const handleAgregarCamas = async () => {
     const cantidadValida = /^\d+$/.test(cantidadCamas) && parseInt(cantidadCamas) > 0;
@@ -135,6 +134,76 @@ const GestionarCamas = ({ show, onHide }) => {
       }
     }
   }, [show]);
+
+  const handleEliminarCama = async (idCama) => {
+    const cama = camas.find((c) => c.idCama === idCama);
+
+    if (!cama) {
+      toast.error('Cama no encontrada');
+      return;
+    }
+
+    if (cama.nombrePaciente && cama.nombrePaciente.trim().toLowerCase() !== "sin paciente") {
+      toast.warning('No se puede eliminar una cama ocupada por un paciente');
+      return;
+    }
+
+    if (cama.nombreEnfermera && cama.nombreEnfermera.trim().toLowerCase() !== "sin enfermera") {
+      toast.warning('No se puede eliminar una cama asignada a una enfermera');
+      return;
+    }
+
+    const camasDelPiso = camas.filter(c => c.idPiso === cama.idPiso);
+    const nombresOrdenados = camasDelPiso
+      .map(c => ({ ...c, num: parseInt(c.nombre.split('-')[1]) }))
+      .sort((a, b) => a.num - b.num);
+
+    if (nombresOrdenados.length > 1) {
+      const index = nombresOrdenados.findIndex(c => c.idCama === idCama);
+      const esPrimera = index === 0;
+      const esUltima = index === nombresOrdenados.length - 1;
+
+      if (!esPrimera && !esUltima) {
+        toast.info('No se puede eliminar una cama intermedia. Solo se permite eliminar la última.');
+        return;
+      }
+    }
+
+    // 🔥 Confirmación con SweetAlert fuera del try
+    const confirmacion = await Swal.fire({
+      title: `¿Eliminar ${cama.nombre}?`,
+      text: "Esta acción no se puede deshacer",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!confirmacion.isConfirmed) return;
+
+    try {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      await axios.delete(`http://localhost:8080/camas/eliminar/${idCama}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Cama eliminada exitosamente',
+        showConfirmButton: false,
+        timer: 1500
+      });
+
+      cargarCamasDelPiso(pisoSeleccionado.idPiso);
+    } catch (error) {
+      toast.error('Error al eliminar la cama');
+      console.error(error); // Por si necesitas revisar en consola
+    }
+  };
 
 
   return (
@@ -235,7 +304,9 @@ const GestionarCamas = ({ show, onHide }) => {
                         variant="danger"
                         size="sm"
                         onClick={() => handleEliminarCama(cama.idCama)}
+                        disabled={rol !== 'admin'}
                       >
+
                         <FaTrash />
                       </Button>
                     </td>

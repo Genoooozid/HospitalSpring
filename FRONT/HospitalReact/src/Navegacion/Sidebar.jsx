@@ -32,7 +32,7 @@ const Sidebar = () => {
     const rawMenuItems = [
         { name: "Pisos y Camas", icon: PisosCamas, path: "/camaspisos", roles: ["admin", "secretaria", "enfermera"] },
         { name: "Enfermeras", icon: Enfermera, path: "/enfermeras", roles: ["admin", "secretaria"] },
-        { name: "Pacientes", icon: Paciente, path: "/pacientes", roles: ["admin", "secretaria", "enfermera"] },
+        { name: "Pacientes", icon: Paciente, path: "/pacientes", roles: ["admin", "enfermera"] },
         { name: "Secretarias", icon: Secretaria, path: "/secretarias", roles: ["admin"] },
     ];
 
