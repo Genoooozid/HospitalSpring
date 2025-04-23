@@ -67,10 +67,6 @@ const TablaSecretarias = ({ refresh, filtroNombre }) => {
     const columnHelper = createColumnHelper();
 
     const columns = useMemo(() => [
-        columnHelper.accessor('id', {
-            header: 'ID',
-            cell: info => info.getValue(),
-        }),
         columnHelper.display({
             id: 'nombreCompleto',
             header: 'Nombre Completo',
@@ -82,7 +78,7 @@ const TablaSecretarias = ({ refresh, filtroNombre }) => {
         columnHelper.accessor('username', {
             header: 'Usuario',
         }),
-        columnHelper.accessor('piso.idPiso', {
+        columnHelper.accessor('piso.nombre', {
             header: 'Piso',
         }),
         columnHelper.accessor('estatus', {

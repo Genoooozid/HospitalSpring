@@ -99,14 +99,14 @@ const ReasignarEnfermeraModal = ({ show, onClose, enfermera, onSuccess }) => {
         }
 
         if (parseInt(nuevoPisoId) === enfermera.piso?.idPiso) {
-            Swal.fire('Advertencia', 'La enfermera ya está asignada a ese piso.', 'info');
+            Swal.fire('Acción no permitida', 'La enfermera ya está asignada a ese piso.', 'info');
             return;
         }
 
         const enfermeraActivaEnElPiso = enfermerasDelPiso.filter(e => e.estatus === true);
 
         if (enfermeraActivaEnElPiso.length === 1 && enfermeraActivaEnElPiso[0].id === enfermera.id) {
-            Swal.fire('Advertencia', 'No puedes reasignar a la única enfermera activa asignada a este piso.', 'warning');
+            Swal.fire('Acción no permitida', 'No puedes reasignar a la única enfermera activa asignada a este piso.', 'warning');
             return;
         }
 

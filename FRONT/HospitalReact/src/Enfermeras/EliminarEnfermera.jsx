@@ -4,14 +4,37 @@ import Swal from 'sweetalert2';
 import DelegarCamasModal from './DelegarCamas';
 
 const EliminarEnfermera = ({ enfermera, onSuccess, disabled = false }) => {
-    const { id, estatus, nombre, paterno, materno } = enfermera;
+    const { id, estatus, nombre, paterno, materno, piso } = enfermera;
     const token = sessionStorage.getItem('token');
 
     const [showDelegarCamasModal, setShowDelegarCamasModal] = useState(false);
     const [reintentarEliminacion, setReintentarEliminacion] = useState(false);
 
+    const fetchEnfermerasPorPiso = async (pisoId) => {
+        try {
+            const response = await axios.get(`http://localhost:8080/api/usuarios/persona/enfermeras/piso/${pisoId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            return response.data;
+        } catch (err) {
+            console.error('Error al obtener enfermeras por piso:', err);
+            return [];
+        }
+    };
+
     const handleEliminar = async () => {
         if (disabled) return;
+
+        const enfermeras = await fetchEnfermerasPorPiso(piso?.idPiso);
+        const enfermerasActivas = enfermeras.filter(e => e.estatus === true);
+
+        if (enfermerasActivas.length === 1 && enfermerasActivas[0].id === id) {
+            Swal.fire('Acción no permitida', 'No puedes desactivar a la única enfermera activa asignada a este piso.', 'warning');
+            return;
+        }
+
         Swal.fire({
             title: '¿Estás seguro?',
             text: `La enfermera ${nombre} ${paterno} ${materno} será desactivada.`,
@@ -123,7 +146,7 @@ const EliminarEnfermera = ({ enfermera, onSuccess, disabled = false }) => {
             {estatus ? (
                 <button
                     className="btn btn-sm btn-danger"
-                    style={{width: '98px'}}
+                    style={{ width: '98px' }}
                     onClick={handleEliminar}
                     disabled={disabled}
                 >
@@ -132,7 +155,7 @@ const EliminarEnfermera = ({ enfermera, onSuccess, disabled = false }) => {
             ) : (
                 <button
                     className="btn btn-sm btn-success"
-                    style={{width: '98px'}}
+                    style={{ width: '98px' }}
                     onClick={handleReactivar}
                 >
                     Reactivar

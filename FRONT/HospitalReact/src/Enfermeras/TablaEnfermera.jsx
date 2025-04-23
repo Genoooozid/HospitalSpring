@@ -20,7 +20,7 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
     const [showReasignarModal, setShowReasignarModal] = useState(false);
     const [showAsignarModal, setShowAsignarModal] = useState(false);
 
-    const rol = sessionStorage.getItem('rol'); 
+    const rol = sessionStorage.getItem('rol');
 
     const triggerRefresh = () => setRefrescar(prev => !prev);
 
@@ -96,10 +96,6 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
     const columnHelper = createColumnHelper();
 
     const columns = useMemo(() => [
-        columnHelper.accessor('id', {
-            header: 'ID',
-            cell: info => info.getValue(),
-        }),
         columnHelper.display({
             id: 'nombreCompleto',
             header: 'Nombre Completo',
@@ -111,7 +107,7 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
         columnHelper.accessor('username', {
             header: 'Usuario',
         }),
-        columnHelper.accessor('piso.idPiso', {
+        columnHelper.accessor('piso.nombre', {
             header: 'Piso',
         }),
         columnHelper.accessor('estatus', {
@@ -143,7 +139,7 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
                             className="btn btn-sm btn-info d-flex align-items-center gap-1"
                             onClick={() => handleAsignar(enfermera)}
                             title="Asignar camas"
-                            disabled={desactivada || rol === 'admin'} 
+                            disabled={desactivada || rol === 'admin'}
                         >
                             Asignar Cama
                         </button>

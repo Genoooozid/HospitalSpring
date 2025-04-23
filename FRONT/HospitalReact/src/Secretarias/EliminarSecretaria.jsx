@@ -3,11 +3,39 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 
 const EliminarSecretaria = ({ secretaria, onSuccess, disabled = false }) => {
-    const { id, estatus, nombre, paterno, materno } = secretaria;
+    const { id, estatus, nombre, paterno, materno, piso } = secretaria;
     const token = sessionStorage.getItem('token');
+
+    const verificarOtrasSecretarias = async () => {
+        try {
+            const response = await axios.get(`http://localhost:8080/api/usuarios/persona/secretarias/piso/${piso.idPiso}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            const secretarias = response.data;
+            return secretarias.some((s) => s.id !== id && s.estatus);
+        } catch (error) {
+            console.error('Error al verificar secretarias activas en el piso:', error);
+            return false;
+        }
+    };
 
     const handleEliminar = async () => {
         if (disabled) return;
+
+        const hayOtrasSecretarias = await verificarOtrasSecretarias();
+
+        if (!hayOtrasSecretarias) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Acción no permitida',
+                text: 'No puedes desactivar a la única secretaria activa del piso.'
+            });
+            return;
+        }
+
         Swal.fire({
             title: '¿Estás seguro?',
             text: `La secretaria ${nombre} ${paterno} ${materno} será desactivada.`,

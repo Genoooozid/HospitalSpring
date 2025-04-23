@@ -64,7 +64,7 @@ const ReasignarSecretariaModal = ({ show, onClose, secretaria, onSuccess }) => {
         }
 
         if (parseInt(nuevoPisoId) === secretaria.piso?.idPiso) {
-            Swal.fire('Advertencia', 'La secretaria ya está asignada a ese piso.', 'info');
+            Swal.fire('Acción no permitida', 'La secretaria ya está asignada a ese piso.', 'info');
             return;
         }
 
