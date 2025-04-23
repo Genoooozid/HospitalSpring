@@ -1,18 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Swal from 'sweetalert2';
 import Logo from '../assets/logo.png';
 import Enfermera from '../assets/inyeccion.png';
 import PisosCamas from '../assets/hospital.png';
 import Paciente from '../assets/hospitalizacion.png';
 import Secretaria from '../assets/secretario.png';
-
+import Bitacora from '../assets/internet.png'
 import { useNavigate, useLocation } from 'react-router-dom';
+import ActualizarDatos from '../components/ActualizarDatos'; 
 
 const Sidebar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const username = sessionStorage.getItem('username');
     const userRole = (sessionStorage.getItem('rol') || "admin").toLowerCase();
+
+    const [showModal, setShowModal] = useState(false);
 
     const handleLogout = async () => {
         sessionStorage.clear();
@@ -34,6 +37,7 @@ const Sidebar = () => {
         { name: "Enfermeras", icon: Enfermera, path: "/enfermeras", roles: ["admin", "secretaria"] },
         { name: "Pacientes", icon: Paciente, path: "/pacientes", roles: ["admin", "enfermera"] },
         { name: "Secretarias", icon: Secretaria, path: "/secretarias", roles: ["admin"] },
+        { name: "Bitacora", icon: Bitacora, path: "/bitacora", roles: ["admin"] },
     ];
 
     return (
@@ -75,15 +79,19 @@ const Sidebar = () => {
                 }}>v1.0.0</p>
             </div>
 
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '15px 25px',
-                marginBottom: '20px',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                borderRadius: '8px',
-                margin: '0 15px 25px'
-            }}>
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '15px 25px',
+                    marginBottom: '20px',
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    borderRadius: '8px',
+                    margin: '0 15px 25px',
+                    cursor: 'pointer'
+                }}
+                onClick={() => setShowModal(true)} 
+            >
                 <div>
                     <p style={{
                         margin: 0,
@@ -186,6 +194,13 @@ const Sidebar = () => {
                     Cerrar Sesión
                 </button>
             </div>
+
+            <ActualizarDatos
+                show={showModal}
+                onClose={() => setShowModal(false)}
+                userId={sessionStorage.getItem('id')}
+                triggerRefresh={() => { }}
+            />
         </div>
     );
 };

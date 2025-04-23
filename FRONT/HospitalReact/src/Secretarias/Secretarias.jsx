@@ -11,7 +11,7 @@ const Secretarias = () => {
     const [loadingPisos, setLoadingPisos] = useState(true);
     const [error, setError] = useState(null);
     const [refresh, setRefresh] = useState(false);
-    const [filtroNombre, setFiltroNombre] = useState('');
+    const [filtro, setFiltro] = useState('');
 
     const triggerRefresh = () => setRefresh(prev => !prev);
 
@@ -60,15 +60,16 @@ const Secretarias = () => {
 
                     <div style={{ width: '250px' }}>
                         <Buscador
-                            value={filtroNombre}
-                            onChange={setFiltroNombre}
+                            value={filtro}
+                            onChange={setFiltro}
+                            placeholder="Buscar por nombre o piso..."
                         />
                     </div>
                 </div>
 
                 {error && <div className="alert alert-danger mt-3">{error}</div>}
 
-                <TablaSecretarias refresh={refresh} filtroNombre={filtroNombre} />
+                <TablaSecretarias refresh={refresh} filtro={filtro} />
 
                 <AgregarSecretariaModal
                     show={showModal}

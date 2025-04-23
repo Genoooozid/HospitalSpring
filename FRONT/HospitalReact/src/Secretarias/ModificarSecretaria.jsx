@@ -39,8 +39,6 @@ const ModificarSecretaria = ({ show, onClose, secretaria, triggerRefresh }) => {
                 return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
             case 'telefono':
                 return /^\d{10}$/.test(value);
-            case 'username':
-                return /^[a-zA-Z0-9_]{4,20}$/.test(value);
             default:
                 return true;
         }
@@ -218,7 +216,6 @@ const ModificarSecretaria = ({ show, onClose, secretaria, triggerRefresh }) => {
                             {errors.telefono && <small style={{ color: 'red' }}>Teléfono debe tener 10 dígitos</small>}
                         </div>
                     </div>
-
                     <div className="form-group">
                         <label>Nombre de Usuario:</label>
                         <input
@@ -226,12 +223,15 @@ const ModificarSecretaria = ({ show, onClose, secretaria, triggerRefresh }) => {
                             name="username"
                             value={formData.username}
                             onChange={handleChange}
-                            style={inputStyle('username')}
-                            required
+                            style={{
+                                ...inputStyle('username'),
+                                backgroundColor: '#f5f5f5',
+                                cursor: 'not-allowed',
+                                border: '1px solid #ddd',
+                            }}
+                            readOnly
                         />
-                        {errors.username && <small style={{ color: 'red' }}>Usuario inválido (4-16 carácteres)</small>}
                     </div>
-
                     <div className="modal-footer">
                         <button
                             type="button"

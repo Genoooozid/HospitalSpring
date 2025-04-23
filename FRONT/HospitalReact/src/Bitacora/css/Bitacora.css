@@ -1,0 +1,28 @@
+.cont {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    height: 650px;
+    border: 1px splid red;
+    flex-direction: column;
+    gap: 3%;
+}
+
+.head {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 10%;
+    border: 1px solid black;
+}
+
+.contTabla {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 55%;
+    border: 1px solid black;
+}

@@ -1,11 +1,11 @@
 import React from 'react';
 
-const Buscador = ({ value, onChange }) => {
+const Buscador = ({ value, onChange, placeholder = "Buscar por nombre o piso..." }) => {
     return (
         <input
             type="text"
             className="form-control"
-            placeholder="Buscar por nombre..."
+            placeholder={placeholder}
             value={value}
             onChange={(e) => onChange(e.target.value)}
         />

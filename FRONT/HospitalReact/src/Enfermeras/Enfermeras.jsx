@@ -11,7 +11,7 @@ const Enfermeras = () => {
     const [loadingPisos, setLoadingPisos] = useState(true);
     const [error, setError] = useState(null);
     const [refresh, setRefresh] = useState(false);
-    const [filtroNombre, setFiltroNombre] = useState('');
+    const [filtro, setFiltro] = useState('');
 
     const triggerRefresh = () => setRefresh(prev => !prev);
 
@@ -60,15 +60,15 @@ const Enfermeras = () => {
 
                     <div style={{ width: '250px' }}>
                         <Buscador
-                            value={filtroNombre}
-                            onChange={setFiltroNombre}
+                            value={filtro}
+                            onChange={setFiltro}
                         />
                     </div>
                 </div>
 
                 {error && <div className="alert alert-danger mt-3">{error}</div>}
 
-                <TablaEnfermeras refresh={refresh} filtroNombre={filtroNombre} />
+                <TablaEnfermeras refresh={refresh} filtro={filtro} />
 
                 <AgregarEnfermeraModal
                     show={showModal}

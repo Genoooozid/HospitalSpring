@@ -68,34 +68,43 @@ const AgregarSecretaria = ({ show, onClose, pisos, loadingPisos, triggerRefresh 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
 
-        const trimmedData = {};
         const newErrors = {};
-
-        Object.entries(formData).forEach(([key, value]) => {
-            const trimmedValue = value.trim();
-            trimmedData[key] = trimmedValue;
-
-            if (!validateField(key, trimmedValue)) {
-                newErrors[key] = true;
+        Object.keys(formData).forEach((key) => {
+            if (key !== 'pisoAsignado') {
+                const error = validateField(key, formData[key]);
+                if (error) newErrors[key] = error;
             }
         });
 
+        if (!formData.pisoAsignado.idPiso) {
+            newErrors.idPiso = 'Seleccione un piso';
+        }
+
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
-            Swal.fire({
-                icon: 'warning',
-                title: 'Datos inválidos',
-                text: 'Revisa los campos marcados antes de continuar.'
-            });
+            setLoading(false);
             return;
         }
 
-        setLoading(true);
-
         try {
-            const token = sessionStorage.getItem('token');
-            await axios.post('http://localhost:8080/api/usuarios/secretarias', trimmedData, {
+            const generatedPassword = `${formData.nombre.trim().split(' ')[0]}${formData.paterno.trim()}`;
+            const password = generatedPassword.charAt(0).toUpperCase() + generatedPassword.slice(1);
+
+            const dataToSend = {
+                ...formData,
+                password
+            };
+
+            await Swal.fire({
+                title: 'Contraseña Generada',
+                html: `La contraseña generada para la nueva secretaria es: <strong>${password}</strong>`,
+                icon: 'info',
+                confirmButtonText: 'Continuar'
+            });
+
+            await axios.post('http://localhost:8080/api/usuarios/persona/secretaria', dataToSend, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -104,19 +113,20 @@ const AgregarSecretaria = ({ show, onClose, pisos, loadingPisos, triggerRefresh 
 
             Swal.fire({
                 icon: 'success',
-                title: '¡Registrada!',
-                text: 'Secretaria registrada correctamente'
+                title: '¡Éxito!',
+                text: 'Secretaria agregada correctamente',
+                timer: 2000,
+                showConfirmButton: false
             });
 
             resetForm();
-            triggerRefresh();
+            onClose(true);
+            setTimeout(() => triggerRefresh(), 3000);
         } catch (error) {
-            const message = error.response?.data?.mensaje || error.response?.data?.message || 'Ocurrió un error al registrar la secretaria';
-
             Swal.fire({
                 icon: 'error',
-                title: 'Error al registrar',
-                text: message
+                title: 'Error',
+                text: error.response?.data?.mensaje || 'Ocurrió un error al agregar la secretaria',
             });
         } finally {
             setLoading(false);

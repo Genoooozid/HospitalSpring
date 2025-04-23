@@ -4,6 +4,14 @@ import Swal from 'sweetalert2';
 import { FiUser } from 'react-icons/fi';
 import './css/agregarEnfermera.css';
 
+// Definimos los regex para validación
+const regex = {
+    nombreCompleto: /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/,
+    correo: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    telefono: /^\d{10}$/,
+    username: /^[a-zA-Z0-9._-]{4,16}$/,
+};
+
 const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }) => {
     const [formData, setFormData] = useState({
         nombre: '',
@@ -16,6 +24,7 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
         pisoAsignado: { idPiso: '' }
     });
 
+    const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [secretariaPiso, setSecretariaPiso] = useState(null);
     const rol = sessionStorage.getItem('rol');
@@ -48,8 +57,26 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
         fetchSecretariaPiso();
     }, [rol, idUsuario, token]);
 
+    const validateField = (name, value) => {
+        switch (name) {
+            case 'nombre':
+            case 'paterno':
+            case 'materno':
+                return regex.nombreCompleto.test(value) ? '' : 'Solo letras y espacios';
+            case 'correo':
+                return regex.correo.test(value) ? '' : 'Correo inválido';
+            case 'telefono':
+                return regex.telefono.test(value) ? '' : 'Teléfono debe tener 10 dígitos';
+            case 'username':
+                return regex.username.test(value) ? '' : 'Usuario inválido (4-16 caracteres)';
+            default:
+                return '';
+        }
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
+
         if (name === 'idPiso') {
             setFormData({
                 ...formData,
@@ -59,6 +86,10 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
             setFormData({
                 ...formData,
                 [name]: value
+            });
+            setErrors({
+                ...errors,
+                [name]: validateField(name, value)
             });
         }
     };
@@ -74,14 +105,55 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
             password: '',
             pisoAsignado: { idPiso: secretariaPiso ? secretariaPiso.idPiso : '' }
         });
+        setErrors({});
+    };
+
+    const generarPassword = (nombre, paterno) => {
+        const primerNombre = nombre.trim().split(' ')[0] || '';
+        const apellidoPaterno = paterno.trim() || '';
+        const passwordBase = `${primerNombre}${apellidoPaterno}`;
+
+        return passwordBase.charAt(0).toUpperCase() + passwordBase.slice(1);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
+        const newErrors = {};
+        Object.keys(formData).forEach((key) => {
+            if (key !== 'pisoAsignado' && key !== 'password') {
+                const error = validateField(key, formData[key]);
+                if (error) newErrors[key] = error;
+            }
+        });
+
+        if (!formData.pisoAsignado.idPiso) {
+            newErrors.idPiso = 'Seleccione un piso';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            setLoading(false);
+            return;
+        }
+
         try {
-            await axios.post('http://localhost:8080/api/usuarios/persona/enfermera', formData, {
+            const password = generarPassword(formData.nombre, formData.paterno);
+
+            await Swal.fire({
+                title: 'Contraseña Generada',
+                html: `La contraseña generada para la nueva enfermera es: <strong>${password}</strong>`,
+                icon: 'info',
+                confirmButtonText: 'Continuar'
+            });
+
+            const dataToSend = {
+                ...formData,
+                password
+            };
+
+            await axios.post('http://localhost:8080/api/usuarios/persona/enfermera', dataToSend, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -113,6 +185,10 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
 
     if (!show) return null;
 
+    const inputStyle = (field) => ({
+        borderColor: errors[field] ? 'red' : '',
+    });
+
     return (
         <div className="modal-backdrop">
             <div className="modal-container">
@@ -126,43 +202,86 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
                     <div className="form-row">
                         <div className="form-group">
                             <label>Nombre(s):</label>
-                            <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} required />
+                            <input
+                                style={inputStyle('nombre')}
+                                type="text"
+                                name="nombre"
+                                value={formData.nombre}
+                                onChange={handleChange}
+                                required
+                            />
+                            {errors.nombre && <small style={{ color: 'red' }}>{errors.nombre}</small>}
                         </div>
                     </div>
 
                     <div className="form-row">
                         <div className="form-group">
                             <label>Apellido Paterno:</label>
-                            <input type="text" name="paterno" value={formData.paterno} onChange={handleChange} required />
+                            <input
+                                style={inputStyle('paterno')}
+                                type="text"
+                                name="paterno"
+                                value={formData.paterno}
+                                onChange={handleChange}
+                                required
+                            />
+                            {errors.paterno && <small style={{ color: 'red' }}>{errors.paterno}</small>}
                         </div>
 
                         <div className="form-group">
                             <label>Apellido Materno:</label>
-                            <input type="text" name="materno" value={formData.materno} onChange={handleChange} />
+                            <input
+                                style={inputStyle('materno')}
+                                type="text"
+                                name="materno"
+                                value={formData.materno}
+                                onChange={handleChange}
+                                required
+                            />
+                            {errors.materno && <small style={{ color: 'red' }}>{errors.materno}</small>}
                         </div>
                     </div>
 
                     <div className="form-row">
                         <div className="form-group">
                             <label>Correo:</label>
-                            <input type="email" name="correo" value={formData.correo} onChange={handleChange} required />
+                            <input
+                                style={inputStyle('correo')}
+                                type="email"
+                                name="correo"
+                                value={formData.correo}
+                                onChange={handleChange}
+                                required
+                            />
+                            {errors.correo && <small style={{ color: 'red' }}>{errors.correo}</small>}
                         </div>
 
                         <div className="form-group">
                             <label>Teléfono:</label>
-                            <input type="tel" name="telefono" value={formData.telefono} onChange={handleChange} required />
+                            <input
+                                style={inputStyle('telefono')}
+                                type="tel"
+                                name="telefono"
+                                value={formData.telefono}
+                                onChange={handleChange}
+                                required
+                            />
+                            {errors.telefono && <small style={{ color: 'red' }}>{errors.telefono}</small>}
                         </div>
                     </div>
 
                     <div className="form-row">
                         <div className="form-group">
                             <label>Nombre de Usuario:</label>
-                            <input type="text" name="username" value={formData.username} onChange={handleChange} required />
-                        </div>
-
-                        <div className="form-group">
-                            <label>Contraseña:</label>
-                            <input type="password" name="password" value={formData.password} onChange={handleChange} required />
+                            <input
+                                style={inputStyle('username')}
+                                type="text"
+                                name="username"
+                                value={formData.username}
+                                onChange={handleChange}
+                                required
+                            />
+                            {errors.username && <small style={{ color: 'red' }}>{errors.username}</small>}
                         </div>
                     </div>
 
@@ -175,20 +294,24 @@ const AgregarEnfermera = ({ show, onClose, pisos, loadingPisos, triggerRefresh }
                                 readOnly
                             />
                         ) : (
-                            <select
-                                name="idPiso"
-                                value={formData.pisoAsignado.idPiso}
-                                onChange={handleChange}
-                                required
-                                disabled={loadingPisos}
-                            >
-                                <option value="">{loadingPisos ? 'Cargando pisos...' : 'Seleccione un piso'}</option>
-                                {pisos.map((piso) => (
-                                    <option key={piso.idPiso} value={piso.idPiso}>
-                                        Piso {piso.numeroPiso} - {piso.nombre}
-                                    </option>
-                                ))}
-                            </select>
+                            <>
+                                <select
+                                    name="idPiso"
+                                    value={formData.pisoAsignado.idPiso}
+                                    onChange={handleChange}
+                                    required
+                                    disabled={loadingPisos}
+                                    style={inputStyle('idPiso')}
+                                >
+                                    <option value="">{loadingPisos ? 'Cargando pisos...' : 'Seleccione un piso'}</option>
+                                    {pisos.map((piso) => (
+                                        <option key={piso.idPiso} value={piso.idPiso}>
+                                            Piso {piso.numeroPiso} - {piso.nombre}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.idPiso && <small style={{ color: 'red' }}>{errors.idPiso}</small>}
+                            </>
                         )}
                     </div>
 

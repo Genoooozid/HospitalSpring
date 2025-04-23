@@ -11,7 +11,7 @@ import ModificarEnfermera from './ModificarEnfermera';
 import ReasignarEnfermera from './ReasignarEnfermera';
 import AsignarCamasAEnfermera from './AsignarCamasAEnfermera';
 
-const TablaEnfermeras = ({ refresh, filtroNombre }) => {
+const TablaEnfermeras = ({ refresh, filtro }) => {
     const [enfermeras, setEnfermeras] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedEnfermera, setSelectedEnfermera] = useState(null);
@@ -86,12 +86,19 @@ const TablaEnfermeras = ({ refresh, filtroNombre }) => {
     };
 
     const enfermerasFiltradas = useMemo(() => {
-        if (!filtroNombre.trim()) return enfermeras;
+        if (!filtro.trim()) return enfermeras;
+        
+        const terminoBusqueda = filtro.toLowerCase();
         return enfermeras.filter(e => {
             const nombreCompleto = `${e.nombre} ${e.paterno} ${e.materno}`.toLowerCase();
-            return nombreCompleto.includes(filtroNombre.toLowerCase());
+            const nombrePiso = e.piso?.nombre?.toLowerCase() || '';
+            
+            return (
+                nombreCompleto.includes(terminoBusqueda) ||
+                nombrePiso.includes(terminoBusqueda)
+            );
         });
-    }, [enfermeras, filtroNombre]);
+    }, [enfermeras, filtro]);
 
     const columnHelper = createColumnHelper();
 

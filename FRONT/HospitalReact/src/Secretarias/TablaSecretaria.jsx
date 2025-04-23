@@ -8,15 +8,15 @@ import {
 } from '@tanstack/react-table';
 import ModificarSecretaria from './ModificarSecretaria';
 import EliminarSecretaria from './EliminarSecretaria';
-import ReasignarSecretaria from './ReasignarSecretaria'; 
+import ReasignarSecretaria from './ReasignarSecretaria';
 
-const TablaSecretarias = ({ refresh, filtroNombre }) => {
+const TablaSecretarias = ({ refresh, filtro }) => {
     const [secretarias, setSecretarias] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedSecretaria, setSelectedSecretaria] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [refrescar, setRefrescar] = useState(false);
-    const [showReasignarModal, setShowReasignarModal] = useState(false); 
+    const [showReasignarModal, setShowReasignarModal] = useState(false);
 
     const triggerRefresh = () => setRefrescar(prev => !prev);
 
@@ -57,12 +57,19 @@ const TablaSecretarias = ({ refresh, filtroNombre }) => {
     };
 
     const secretariasFiltradas = useMemo(() => {
-        if (!filtroNombre.trim()) return secretarias;
+        if (!filtro.trim()) return secretarias;
+
+        const terminoBusqueda = filtro.toLowerCase();
         return secretarias.filter(s => {
             const nombreCompleto = `${s.nombre} ${s.paterno} ${s.materno}`.toLowerCase();
-            return nombreCompleto.includes(filtroNombre.toLowerCase());
+            const nombrePiso = s.piso?.nombre?.toLowerCase() || '';
+
+            return (
+                nombreCompleto.includes(terminoBusqueda) ||
+                nombrePiso.includes(terminoBusqueda)
+            );
         });
-    }, [secretarias, filtroNombre]);
+    }, [secretarias, filtro]);
 
     const columnHelper = createColumnHelper();
 
